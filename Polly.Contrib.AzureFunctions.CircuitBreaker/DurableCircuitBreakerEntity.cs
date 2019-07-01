@@ -95,8 +95,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             breakerState.ConsecutiveFailureCount = 0;
 
             // A success result in HalfOpen state causes the circuit to close (permit executions) again.
-            if (breakerState.CircuitState == CircuitState.HalfOpen
-                || (breakerState.CircuitState == CircuitState.Open && DateTime.UtcNow > breakerState.BrokenUntil))
+            if (IsHalfOpen(breakerState))
             {
                 log.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit re-closing: {circuitBreakerId}.");
 
@@ -120,10 +119,9 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             // Or a failure when in the HalfOpen 'testing' state? That also breaks the circuit again.
             if (
                 (breakerState.CircuitState == CircuitState.Closed && breakerState.ConsecutiveFailureCount >= breakerState.MaxConsecutiveFailures) 
-                || breakerState.CircuitState == CircuitState.HalfOpen 
-                || (breakerState.CircuitState == CircuitState.Open && DateTime.UtcNow > breakerState.BrokenUntil))
+                || IsHalfOpen(breakerState))
             {
-                log.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit {(breakerState.CircuitState == CircuitState.HalfOpen || (breakerState.CircuitState == CircuitState.Open && DateTime.UtcNow > breakerState.BrokenUntil) ? "re-opening" : "opening")}: {circuitBreakerId}.");
+                log.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit {(IsHalfOpen(breakerState) ? "re-opening" : "opening")}: {circuitBreakerId}.");
 
                 breakerState.CircuitState = CircuitState.Open;
                 breakerState.BrokenUntil = DateTime.UtcNow + breakerState.BreakDuration;
@@ -132,6 +130,12 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             }
 
             return breakerState.CircuitState;
+        }
+
+        private static bool IsHalfOpen(BreakerState breakerState)
+        {
+            return breakerState.CircuitState == CircuitState.HalfOpen
+                || breakerState.CircuitState == CircuitState.Open && DateTime.UtcNow > breakerState.BrokenUntil;
         }
 
         private static CircuitState GetCircuitState(IDurableEntityContext context, ILogger log)
