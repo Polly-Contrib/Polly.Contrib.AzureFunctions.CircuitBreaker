@@ -65,12 +65,12 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
                     // When the breaker is Open or HalfOpen, we permit a single test execution after BreakDuration has passed.
                     // The test execution phase is known as HalfOpen state.
-                    if (DateTime.Now > breakerState.BrokenUntil)
+                    if (DateTime.UtcNow > breakerState.BrokenUntil)
                     {
                         log.LogCircuitBreakerMessage(circuitBreakerId, $"Permitting a test execution in half-open state: {circuitBreakerId}.");
 
                         breakerState.CircuitState = CircuitState.HalfOpen;
-                        breakerState.BrokenUntil = DateTime.Now + breakerState.BreakDuration;
+                        breakerState.BrokenUntil = DateTime.UtcNow + breakerState.BreakDuration;
 
                         context.SetState(breakerState);
 
@@ -95,7 +95,8 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             breakerState.ConsecutiveFailureCount = 0;
 
             // A success result in HalfOpen state causes the circuit to close (permit executions) again.
-            if (breakerState.CircuitState == CircuitState.HalfOpen)
+            if (breakerState.CircuitState == CircuitState.HalfOpen
+                || (breakerState.CircuitState == CircuitState.Open && DateTime.UtcNow > breakerState.BrokenUntil))
             {
                 log.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit re-closing: {circuitBreakerId}.");
 
@@ -117,12 +118,15 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
             // If we have too many consecutive failures, open the circuit.
             // Or a failure when in the HalfOpen 'testing' state? That also breaks the circuit again.
-            if ((breakerState.CircuitState == CircuitState.Closed && breakerState.ConsecutiveFailureCount >= breakerState.MaxConsecutiveFailures) || breakerState.CircuitState == CircuitState.HalfOpen)
+            if (
+                (breakerState.CircuitState == CircuitState.Closed && breakerState.ConsecutiveFailureCount >= breakerState.MaxConsecutiveFailures) 
+                || breakerState.CircuitState == CircuitState.HalfOpen 
+                || (breakerState.CircuitState == CircuitState.Open && DateTime.UtcNow > breakerState.BrokenUntil))
             {
-                log.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit {(breakerState.CircuitState == CircuitState.HalfOpen ? "re-opening" : "opening")}: {circuitBreakerId}.");
+                log.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit {(breakerState.CircuitState == CircuitState.HalfOpen || (breakerState.CircuitState == CircuitState.Open && DateTime.UtcNow > breakerState.BrokenUntil) ? "re-opening" : "opening")}: {circuitBreakerId}.");
 
                 breakerState.CircuitState = CircuitState.Open;
-                breakerState.BrokenUntil = DateTime.Now + breakerState.BreakDuration;
+                breakerState.BrokenUntil = DateTime.UtcNow + breakerState.BreakDuration;
 
                 context.SetState(breakerState);
             }

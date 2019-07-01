@@ -7,54 +7,62 @@ using Microsoft.Extensions.Logging;
 
 namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
-    public static class DurableCircuitBreakerExternalApi
+    public class DurableCircuitBreakerExternalApi
     {
+        private readonly IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator;
+
+        public DurableCircuitBreakerExternalApi(
+            IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator)
+        {
+            this.durableCircuitBreakerOrchestrator = durableCircuitBreakerOrchestrator;
+        }
+
         [FunctionName("IsExecutionPermitted")]
-        public static async Task<IActionResult> IsExecutionPermitted(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "DurableCircuitBreaker/IsExecutionPermitted/{circuitBreakerId:alpha}")] HttpRequestMessage req,
+        public async Task<IActionResult> IsExecutionPermitted(
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "DurableCircuitBreaker/{circuitBreakerId:alpha}/IsExecutionPermitted")] HttpRequestMessage req,
             // GET http method left accessible for easy demonstration from a browser. Conceptually, even IsExecutionPermitted may change circuit state (to Half-Open), so might be considered POST-only.
             string circuitBreakerId,
             ILogger log,
-            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient // Used to drive the circuit-breaker.
+            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult(await orchestrationClient.IsExecutionPermittedByBreaker(circuitBreakerId, log));
+            return new OkObjectResult(await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_FidelityPriority(orchestrationClient, circuitBreakerId, log));
         }
 
         [FunctionName("GetCircuitState")]
-        public static async Task<IActionResult> GetCircuitState(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "DurableCircuitBreaker/GetCircuitState/{circuitBreakerId:alpha}")]  HttpRequestMessage req,
+        public async Task<IActionResult> GetCircuitState(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "DurableCircuitBreaker/{circuitBreakerId:alpha}/GetCircuitState")]  HttpRequestMessage req,
             string circuitBreakerId,
             ILogger log,
-            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient // Used to drive the circuit-breaker.
+            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult((await orchestrationClient.GetCircuitStateForBreaker(circuitBreakerId, log)).ToString());
+            return new OkObjectResult((await durableCircuitBreakerOrchestrator.GetCircuitStateForBreaker(orchestrationClient, circuitBreakerId, log)).ToString());
         }
 
         [FunctionName("RecordSuccess")]
-        public static async Task<IActionResult> RecordSuccess(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "DurableCircuitBreaker/RecordSuccess/{circuitBreakerId:alpha}")] HttpRequestMessage req,
+        public async Task<IActionResult> RecordSuccess(
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "DurableCircuitBreaker/{circuitBreakerId:alpha}/RecordSuccess")] HttpRequestMessage req,
             // GET http method left accessible for easy demonstration from a browser. Conceptually, it should be only a POST operation, as it amends circuit statistics and potentially state.
             string circuitBreakerId,
             ILogger log,
-            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient // Used to drive the circuit-breaker.
+            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            await orchestrationClient.RecordSuccessForBreaker(circuitBreakerId, log);
+            await durableCircuitBreakerOrchestrator.RecordSuccessForBreaker(orchestrationClient, circuitBreakerId, log);
             return new OkResult();
         }
 
         [FunctionName("RecordFailure")]
-        public static async Task<IActionResult> RecordFailure(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "DurableCircuitBreaker/RecordFailure/{circuitBreakerId:alpha}")] HttpRequestMessage req,
+        public async Task<IActionResult> RecordFailure(
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "DurableCircuitBreaker/{circuitBreakerId:alpha}/RecordFailure")] HttpRequestMessage req,
             // GET http method left accessible for easy demonstration from a browser. Conceptually, it should be only a POST operation, as it amends circuit statistics and potentially state.
             string circuitBreakerId,
             ILogger log,
-            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient // Used to drive the circuit-breaker.
+            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            await orchestrationClient.RecordFailureForBreaker(circuitBreakerId, log);
+            await durableCircuitBreakerOrchestrator.RecordFailureForBreaker(orchestrationClient, circuitBreakerId, log);
             return new OkResult();
         }
 

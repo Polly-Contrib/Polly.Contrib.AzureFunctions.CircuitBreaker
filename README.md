@@ -2,27 +2,25 @@
 
 This repo provides a **durable, distributed circuit-breaker**, implemented in Azure Functions.
 
-It is provided as a proof-of-concept, starter pattern for users to trial and potentially adapt into Azure functions apps.
+It is provided as a proof-of-concept, starter pattern for users to trial and adapt into Azure functions apps.
+
+The durable, distributed circuit-breaker can be consumed in two ways:
+
++ from within an Azure functions app, by another function; 
++ from outside Azure functions, from anywhere, over an http/s api.
 
 Feedback on usage and suggestions/PRs welcome.
 
-## Intended usage
-
-The circuit-breaker can be consumed in two ways:
-
-+ from within an Azure functions app; 
-+ from anywhere, over an http api.
-
 ## Conceptual overview
 
-The implementation uses [Durable Entity functions](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-preview#entity-functions) (in preview at time of writing, May 2019) to persist circuit state durably across invocations and across scaled-out function apps.
+The implementation uses [Durable Entity functions](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-preview#entity-functions) (in preview at time of writing, June 2019) to persist circuit state durably across invocations and across scaled-out function apps.
 
 The breaker behaves as a consecutive-count circuit-breaker, as described for the [original Polly circuit-breaker](https://github.com/App-vNext/Polly/wiki/Circuit-Breaker):
 
 + In **Closed** state, the circuit-breaker permits executions and counts consecutive failures.
 + If a configuration threshold `MaxConsecutiveFailures` is met, the circuit transitions to **Open** for a duration of `BreakDuration`.
 + In **Open** state executions are blocked, and fail fast.
-+ After `BreakDuration`, the circuit transitions to **half-open** state, and a single test-execution is permitted: if it succeeds, the circuit _closes_ again; if it fails, the circuit _opens_ again.
++ After `BreakDuration`, the circuit transitions to **half-open** state, and a single<sup>(in Fidelity mode)</sup> test-execution is permitted: if it succeeds, the circuit _closes_ again; if it fails, the circuit _opens_ again.
 
 For more detail, see the [original Polly circuit-breaker wiki](https://github.com/App-vNext/Polly/wiki/Circuit-Breaker).
 
@@ -30,35 +28,62 @@ The Azure functions implementation manages multiple circuit-breaker instances, e
 
 ## Executing code through a circuit-breaker from within an Azure function
 
-To execute code through a circuit breaker within an Azure function, call the extension method:
+The `Examples` folder demonstrates two different modes in which we can consume the circuit-breaker from within Azure Functions: **fidelity priority** and **throughput priority**.
 
-    IDurableOrchestrationClient.ExecuteThroughCircuitBreakerAsync<T>(
-        Func<Task<T>> action,
-        string circuitBreakerId,
-        ILogger log)
+### Fidelity priority
 
-For example, in the sample code:
+**Fidelity priority** checks with the circuit-breaker, to determine whether the execution is permitted, for each execution through the breaker.  It uses the strongly-consistent APIs on the entity function to do so.
 
-    [FunctionName("FooFragileFunction")]
-    public static Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequestMessage req,
-        ILogger log,
-        [OrchestrationClient]IDurableOrchestrationClient orchestrationClient // Used to drive the circuit-breaker.
-        )
+This provides behaviour completely faithful to the classic circuit-breaker pattern described in **Conceptual overview** above.
+
+#### Executing code through the breaker: Fidelity priority
+
+To execute code through a circuit breaker within an Azure function, adopt the pattern shown in `FooFragileFunctionConsumingBreaker_FidelityPriority`:
+
+    if (!await orchestrationClient.IsExecutionPermittedByBreaker_FidelityPriority(CircuitBreakerId, log))
     {
-        return orchestrationClient.ExecuteThroughCircuitBreakerAsync(
-            () => OriginalFunctionMethod(req, log), 
-            circuitBreakerId: "FooFragileFunction", 
-            log);
+        // We throw an exception here to indicate the circuit is not permitting calls. Other logic could be adopted if preferred.
+        throw new BrokenCircuitException();
     }
 
-This short function executes a single method through the circuit-breaker. It is just a simple example, to demonstrate how you might take the original method of a function and execute it through a circuit-breaker. However, a function could make any number of outbound calls guarded by circuit-breakers. 
+    try
+    {
+        var result = await OriginalFunctionMethod(req, log);
+
+        await orchestrationClient.RecordSuccessForBreaker(CircuitBreakerId, log);
+
+        return result;
+    }
+    catch
+    {
+        await orchestrationClient.RecordFailureForBreaker(CircuitBreakerId, log);
+
+        throw;
+    }
+
+Of course, you can extend this pattern to filter on specific exceptions; or treat certain returned result values also as failures.
+
+### Throughput priority
+
+**Throughput priority** is designed for scenarios with high numbers of executions per second.  It uses the APIs on entity functions which prioritise performance over consistency. 
+
+The behaviour changes in the following ways, for performance gain:
+
++ The state of the circuit-breaker is cached for periods controlled by configuration, to avoid repeated reads of state that is unlikely to have changed.  
++ There is a weaker guarantee in half-open state. The half-open state does not control that only one trial operation is permitted in half-open; any number are permitted.  However, the first success or failure in half-open state will cause the circuit to transition from half-open to closed or open again.
+
+
+#### Executing code through the breaker: Throughput priority
+
+The pattern is identical, except for the following call to determine whether an execution is permitted:
+
+    if (!await orchestrationClient.IsExecutionPermittedByBreaker_ThroughputPriority(CircuitBreakerId, log))
 
 ### Demo: Executing code through a circuit-breaker within an Azure function
 
-+ Start the functions app locally [using the Azure Functions Core Tools local development experience](https://docs.microsoft.com/en-us/azure/azure-functions/functions-develop-local), or deploy to your Azure subscription setting environment variables parallel to the choices in `local.settings.json`.
-+ Hit the endpoint configured in your function app for `FooFragileFunction`, repeatedly.
-+ The `FooFragileFunction` endpoint simulates an operation failing 50% of the time.
++ Start the functions app locally [using the Azure Functions Core Tools local development experience](https://docs.microsoft.com/en-us/azure/azure-functions/functions-develop-local), or deploy to your Azure subscription and set environment variables parallel to the choices in `local.settings.json`.
++ Hit the endpoint configured in your function app for `FooFragileFunctionConsumingBreaker_FidelityPriority` (or `FooFragileFunctionConsumingBreaker_ThroughputPriority`), repeatedly.
++ The endpoint simulates an operation failing 50% of the time.
 + The sample is configured to break the circuit for 10 seconds when 2 consecutive failures have occurred.
 
 _Hint:_ Watch the logging to see the operation of the circuit-breaker.
@@ -66,24 +91,24 @@ _Hint:_ Watch the logging to see the operation of the circuit-breaker.
 
 ## Consuming as a durable, distributed circuit-breaker from any location, over http
 
-The durable circuit-breaker exposes an Http api for consuming the circuit-breaker over http.  By default, the operations are exposed on the below endpoints (you can of course vary this).
+The durable circuit-breaker exposes an Http api for consuming the circuit-breaker over http.  By default, the operations are exposed on the below endpoints:
 
 | Endpoint | Http verb | Operation | Example return value |
 | --- | --- | --- | --- | 
-| `/DurableCircuitBreaker/IsExecutionPermitted/{circuitBreakerId:alpha}` | POST<sup>1</sup> | Returns the state of the circuit-breaker | 200 OK `true` |
-| `/DurableCircuitBreaker/RecordSuccess/{circuitBreakerId:alpha}` | POST<sup>1</sup> | Returns the state of the circuit-breaker | 200 OK |
-| `/DurableCircuitBreaker/RecordFailure/{circuitBreakerId:alpha}` | POST<sup>1</sup> | Returns the state of the circuit-breaker | 200 OK  |
-| `/DurableCircuitBreaker/GetCircuitState/{circuitBreakerId:alpha}` | GET | Returns the state of the circuit-breaker | 200 OK `Closed` |
+| `/DurableCircuitBreaker/{circuitBreakerId:alpha}/IsExecutionPermitted` | POST<sup>1</sup> | Returns whether an execution is permitted | 200 OK `true` |
+| `/DurableCircuitBreaker/{circuitBreakerId:alpha}/RecordSuccess` | POST<sup>1</sup> | Records a success outcome in the breaker's internal statistics | 200 OK |
+| `/DurableCircuitBreaker/{circuitBreakerId:alpha}/RecordFailure` | POST<sup>1</sup> | Records a failure outcome in the breaker's internal statistics | 200 OK  |
+| `/DurableCircuitBreaker/{circuitBreakerId:alpha}/GetCircuitState` | GET | Returns the state of the circuit-breaker | 200 OK `Closed` |
 
 <sup>1</sup> Operations described as POST (including IsExecutionPermitted) are POST because they modify the circuit's internal statistics or state.  For the sake of easy demoing, the sample application exposes these endpoints also as GET.
 
-To consume this circuit-breaker from an external application, you must make calls to `IsExecutionPermitted`, `RecordSuccess` and `RecordFailure` yourself. You would typically implement a pattern similar to the below (as also seen in `DurableCircuitBreakerFunctionsInternalApi.ExecuteThroughCircuitBreakerAsync<T>()`).  
+To consume this circuit-breaker from an external application, you make calls to `IsExecutionPermitted`, `RecordSuccess` and `RecordFailure` from your client code. You would typically implement a pattern similar to the below.  
 
 _(example intentionally in pseudo-code, not C#, as you may consume the distributed circuit-breaker from any language)_
 
     string circuitBreakerId = ... // circuit breaker to use
 
-    if (calling /IsExecutionPermitted/{circuitBreakerId} returns false)
+    if (calling /{circuitBreakerId}/IsExecutionPermitted returns false)
     {
         throw Exception("Circuit is broken.") // or choose some other way to indicate a broken circuit to your code
     }
@@ -92,28 +117,30 @@ _(example intentionally in pseudo-code, not C#, as you may consume the distribut
     {
         var result = /* execute the code you want guarded by the breaker */
 
-        call /RecordSuccess/{circuitBreakerId}
+        call /{circuitBreakerId}/RecordSuccess // can be fire-and-forget
     }
     catch exception
     {
-        call /RecordFailure/{circuitBreakerId}
+        call /{circuitBreakerId}/RecordFailure // can be fire-and-forget
 
         rethrow exception
     }
 
-In .NET Core, the most obvious way to implement this would be to use HttpClientFactory to define an `HttpClient` with BaseUri and authorization ready-configured to place the calls to the distributed circuit-breaker functions.
+In .NET Core, the most obvious way to implement this would be to use HttpClientFactory to define an `HttpClient` with BaseUri and authorization pre-configured for placing the calls to the distributed circuit-breaker functions.
 
 The `GetCircuitState` endpoint is provided for information. It is not required to use it, to operate the circuit-breaker.
+
+To compare with the modes (fidelity and priority) available for in-functions use of the breaker, the breaker consumed over the http api operates in fidelity mode. Optimisations made by throughput-priority in the functions case, such as only checking circuit-state at given intervals, would be made on the caller side (before calling the breaker over http) in consumption over http.
 
 ### Demo: Consuming as a distributed circuit-breaker over http
 
 + Start the functions app locally [using the Azure Functions Core Tools local development experience](https://docs.microsoft.com/en-us/azure/azure-functions/functions-develop-local) or deploy to your Azure subscription with appropriate environment variables set.
 + The circuit-breaker with `circuitBreakerId: MyCircuitBreaker` is configured to break for five seconds if 3 consecutive failures occur.
 + Prepare the following endpoints as calls you can repeatedly make - eg with Postman, Curl, or simply open each as a separate tab in a local browser:  (as mentioned above, strictly RESTful semantics would have three of these POST-only, but the sample exposes all as GET for quick exploration/demo via a browser)
-  - `https://<yourfunctionhost>/DurableCircuitBreaker/GetCircuitState/MyCircuitBreaker`
-  - `https://<yourfunctionhost>/DurableCircuitBreaker/IsExecutionPermitted/MyCircuitBreaker`
-  - `https://<yourfunctionhost>/DurableCircuitBreaker/RecordSuccess/MyCircuitBreaker`
-  - `https://<yourfunctionhost>/DurableCircuitBreaker/RecordFailure/MyCircuitBreaker`
+  - `https://<yourfunctionhost>/DurableCircuitBreaker/MyCircuitBreaker/GetCircuitState`
+  - `https://<yourfunctionhost>/DurableCircuitBreaker/MyCircuitBreaker/IsExecutionPermitted`
+  - `https://<yourfunctionhost>/DurableCircuitBreaker/MyCircuitBreaker/RecordSuccess`
+  - `https://<yourfunctionhost>/DurableCircuitBreaker/MyCircuitBreaker/RecordFailure`
 
 + You can then call the endpoints in turn to exercise the circuit-breaker. For example:
 
@@ -128,7 +155,7 @@ The `GetCircuitState` endpoint is provided for information. It is not required t
 
 ## Configuring a circuit-breaker instance
 
-Each circuit-breaker instance consumed must be configured in the function app's app settings.
+Each circuit-breaker instance consumed is configured in the function app's app settings.
 
 All configuration values are of the form: 
 
@@ -146,8 +173,9 @@ All configuration values are of the form:
 | Setting name | Type | Meaning | Default <br/>(if not specified) |
 | --- | --- | --- | --- | --- |
 | `LogLevel` | `Microsoft .Extensions .Logging .LogLevel` | The level at which to log circuit events. | `LogLevel .Information` |
-| `CheckCircuitTimeout` | ISO 8601 duration | The maximum duration to wait to determine whether an execution should be permitted. (If the circuit state cannot be determined within this timespan, the execution is permitted.) |`PT2S`|
-| `CheckCircuitRetryInterval` | ISO 8601 duration | The interval to wait before retrying obtaining circuit state |`PT0.25S`|
+| `FidelityPriorityCheckCircuitTimeout` | ISO 8601 duration | In fidelity mode, the maximum duration to wait to determine whether an execution should be permitted. (If the circuit state cannot be determined within this timespan, the execution is permitted.) |`PT2S`|
+| `FidelityPriorityCheckCircuitRetryInterval` | ISO 8601 duration | In fidelity mode, an internal setting determining how often to retry obtaining state (within the above timeout), if it is delayed. |`PT0.25S`|
+| `ThroughputPriorityCheckCircuitInterval` | ISO 8601 duration | In priority mode, the state will be memory-cached and not requeried for this period, to prioritise performance |`PT5S`|
 
 ## Scoping named circuit-breaker instances
 
@@ -164,6 +192,12 @@ For the purposes of visibility while demoing, the demo code intentionally centra
 
 In a production app you might choose to organise your logging differently.
 
+## Load
+
+The demonstration implementation is expected to be put through load-testing in early July - we hope to publish some load-testing statistics when available.
+
+The implementation makes lightweight use of the new Entity Functions persistence features.
+
 ## Implementation details
 
 ### Components
@@ -172,9 +206,10 @@ In a production app you might choose to organise your logging differently.
 | --- | --- | --- |
 |`DurableCircuitBreaker`|durable entity function|contains the core circuit-breaker logic. Defines and implements four operations:<br/>+ `IsExecutionPermitted`<br/>+ `RecordSuccess`<br/>+ `RecordFailure`<br/> + `GetCircuitState`|
 |`DurableCircuitBreakerOrchestrator`|orchestrator function and static helper methods|Internal helper methods for orchestrating calls through the circuit-breaker |
-|`DurableCircuitBreakerFunctionsInternalApi`|static extension mehods|Api for executing calls through a circuit-breaker from within an Azure Functions app|
 |`DurableCircuitBreakerExternalApi`|http-triggered functions|an external API for consuming the durable circuit-breaker from anywhere, over http|
 |`local.settings.json`|configuration environment variables|demonstrates configuration for circuit-breaker instances|
-|`FooFragileFunction`|Standard http-triggered function|demonstrates a standard Azure function executing its work through the circuit-breaker|
+|`FooFragileFunction_*`|Standard http-triggered function|demonstrates a standard Azure function executing its work through the circuit-breaker|
+
+### Characteristics
 
 The implementation intentionally makes lightweight use of Entity Functions features using a single Entity Function to maintain state and a low number of calls and signals to or between entities.  

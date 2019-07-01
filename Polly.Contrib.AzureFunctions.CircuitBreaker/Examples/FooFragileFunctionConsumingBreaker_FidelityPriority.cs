@@ -1,0 +1,78 @@
+﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Extensions.Logging;
+
+namespace Polly.Contrib.AzureFunctions.CircuitBreaker.Examples
+{
+    public class FooFragileFunctionConsumingBreaker_FidelityPriority
+    {
+        // Uniquely identifies the circuit-breaker instance guarding this operation.
+        private const string CircuitBreakerId = nameof(FooFragileFunctionConsumingBreaker_FidelityPriority);
+
+        // Used by this demonstration code to generate random failures of the simulated work.
+        private static readonly Random Rand = new Random();
+
+        private readonly IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator;
+
+        public FooFragileFunctionConsumingBreaker_FidelityPriority(IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator)
+        {
+            this.durableCircuitBreakerOrchestrator = durableCircuitBreakerOrchestrator;
+        }
+
+
+        [FunctionName("FooFragileFunctionConsumingBreaker_FidelityPriority")]
+        public async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestMessage req,
+            ILogger log,
+            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
+        )
+        {
+            // In the _FidelityPriority example, we await hearing from the circuit-breaker whether execution is permitted.
+            // This makes operations entirely faithful to the state of the breaker at any time,
+            // and allows us to restrict executions in the half-open state to a limited number of trial executions.
+
+            if (!await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_FidelityPriority(orchestrationClient, CircuitBreakerId, log))
+            {
+                // We throw an exception here to indicate the circuit is not permitting calls. Other logic could be adopted if preferred.
+                throw new BrokenCircuitException();
+            }
+
+            try
+            {
+                var result = await OriginalFunctionMethod(req, log);
+
+                await durableCircuitBreakerOrchestrator.RecordSuccessForBreaker(orchestrationClient, CircuitBreakerId, log);
+
+                return result;
+            }
+            catch
+            {
+                await durableCircuitBreakerOrchestrator.RecordFailureForBreaker(orchestrationClient, CircuitBreakerId, log);
+
+                throw;
+            }
+        }
+        
+        private static async Task<IActionResult> OriginalFunctionMethod(HttpRequestMessage req, ILogger log)
+        {
+            // Do something fragile!
+            if (Rand.Next(2) == 0)
+            {
+                /*await Task.Delay(TimeSpan.FromSeconds(1));*/
+                throw new Exception("Something fragile went wrong.");
+            }
+
+            // Do some work and return some result.
+            await Task.CompletedTask;
+
+            var helloWorld = "Hello world: from inside the function guarded by the circuit-breaker.";
+            log.LogInformation(helloWorld);
+
+            return new OkObjectResult(helloWorld);
+        }
+    }
+}
