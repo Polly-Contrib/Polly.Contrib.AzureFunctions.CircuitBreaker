@@ -91,7 +91,7 @@ _Hint:_ Watch the logging to see the operation of the circuit-breaker.
 
 ## Consuming as a durable, distributed circuit-breaker from any location, over http
 
-The durable circuit-breaker exposes an Http api for consuming the circuit-breaker over http.  By default, the operations are exposed on the below endpoints:
+The durable circuit-breaker exposes an Http/s api for consuming the circuit-breaker over http.  By default, the operations are exposed on the below endpoints:
 
 | Endpoint | Http verb | Operation | Example return value |
 | --- | --- | --- | --- | 
@@ -130,7 +130,7 @@ In .NET Core, the most obvious way to implement this would be to use HttpClientF
 
 The `GetCircuitState` endpoint is provided for information. It is not required to use it, to operate the circuit-breaker.
 
-To compare with the modes (fidelity and priority) available for in-functions use of the breaker, the breaker consumed over the http api operates in fidelity mode. Optimisations made by throughput-priority in the functions case, such as only checking circuit-state at given intervals, would be made on the caller side (before calling the breaker over http) in consumption over http.
+To compare with the modes (fidelity and priority) available for in-functions use of the breaker, the breaker consumed over the http api operates in fidelity mode. Optimisations made by throughput-priority in the functions case, such as only checking circuit-state at given intervals, would be made on the caller side (before calling the breaker over http), when consuming the breaker over http.
 
 ### Demo: Consuming as a distributed circuit-breaker over http
 
