@@ -4,6 +4,12 @@
 # Azure Functions localsettings file
 local.settings.json
 
+# Azure Function proxies - used to assist with load testing
+proxies.json
+
+# Azure Functions publishing files
+*.pubxml
+
 # User-specific files
 *.suo
 *.user
