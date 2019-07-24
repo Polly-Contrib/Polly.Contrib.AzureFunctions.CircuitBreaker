@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -39,8 +41,9 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker.Examples
 
             if (!await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_ThroughputPriority(orchestrationClient, CircuitBreakerId, log))
             {
-                // We throw an exception here to indicate the circuit is not permitting calls. Other logic could be adopted if preferred.
-                throw new BrokenCircuitException();
+                log.LogError($"{nameof(FooFragileFunctionConsumingBreaker_ThroughputPriority)}: Service unavailable.");
+
+                return new StatusCodeResult((int)HttpStatusCode.ServiceUnavailable);
             }
 
             try
@@ -51,11 +54,13 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker.Examples
 
                 return result;
             }
-            catch
+            catch (Exception exception)
             {
                 await durableCircuitBreakerOrchestrator.RecordFailureForBreaker(orchestrationClient, CircuitBreakerId, log);
 
-                throw;
+                log.LogError(exception, $"{nameof(FooFragileFunctionConsumingBreaker_ThroughputPriority)}: Exception: {exception.Message}");
+
+                return new InternalServerErrorResult();
             }
         }
         
