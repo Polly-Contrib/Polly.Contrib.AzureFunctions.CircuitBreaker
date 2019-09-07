@@ -16,8 +16,6 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             string circuitBreakerId,
             ILogger log)
         {
-            log.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (consistency priority) for circuit-breaker = '{circuitBreakerId}'.");
-
             // The circuit-breaker can be configured with a maximum time you are prepared to wait to obtain the current circuit state; this allows you to limit the circuit-breaker itself introducing unwanted excessive latency.
             var checkCircuitConfiguration = GetCheckCircuitConfiguration(circuitBreakerId);
 
@@ -44,15 +42,23 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         private const string IsExecutionPermittedInternalOrchestratorName = "IsExecutionPermittedInternalOrchestratorName";
 
         [FunctionName(IsExecutionPermittedInternalOrchestratorName)]
-        public async Task<bool> IsExecutionPermittedInternalOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
+        public async Task<bool> IsExecutionPermittedInternalOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
         {
             string breakerId = context.GetInput<string>();
             if (string.IsNullOrEmpty(breakerId))
             {
                 throw new InvalidOperationException($"{IsExecutionPermittedInternalOrchestratorName}: Could not determine breakerId of circuit-breaker requested.");
             }
+            return await IsExecutionPermitted(context, breakerId, log);
+        }
 
-            return await context.CallEntityAsync<bool>(DurableCircuitBreakerEntity.GetEntityId(breakerId), DurableCircuitBreakerEntity.Operation.IsExecutionPermitted);
+        public async Task<bool> IsExecutionPermitted(IDurableOrchestrationContext orchestrationContext, string breakerId, ILogger log)
+        {
+            if (string.IsNullOrEmpty(breakerId)) { throw new ArgumentNullException($"{nameof(breakerId)}"); }
+
+            log.LogCircuitBreakerMessage(breakerId, $"Asking IsExecutionPermitted (consistency priority) for circuit-breaker = '{breakerId}'.");
+
+            return await orchestrationContext.CallEntityAsync<bool>(DurableCircuitBreakerEntity.GetEntityId(breakerId), DurableCircuitBreakerEntity.Operation.IsExecutionPermitted);
         }
 
         private async Task<(bool?, OrchestrationRuntimeStatus)> WaitForCompletionOrTimeout(
