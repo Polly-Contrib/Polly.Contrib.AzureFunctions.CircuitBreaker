@@ -1,3 +1,7 @@
+## 1.0.0-rc1
+
+- Use a single demonstration `FooFragileFunction_WithCircuitBreaker`
+
 ## 1.0.0-preview7
 
 - Simplify code naming and presentation
