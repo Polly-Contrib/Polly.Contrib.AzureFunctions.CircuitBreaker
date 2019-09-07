@@ -1,6 +1,7 @@
 ## 1.0.0-preview7
 
 - Simplify code naming and presentation
+- Add GetBreakerState as a function available via the external API
 
 ## 1.0.0-preview6
 

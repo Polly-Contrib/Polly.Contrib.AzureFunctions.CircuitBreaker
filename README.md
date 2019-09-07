@@ -100,7 +100,8 @@ The durable circuit-breaker exposes an Http/s api for consuming the circuit-brea
 | `/DurableCircuitBreaker/{circuitBreakerId:alpha}/IsExecutionPermitted` | POST<sup>1</sup> | Returns whether an execution is permitted | 200 OK `true` |
 | `/DurableCircuitBreaker/{circuitBreakerId:alpha}/RecordSuccess` | POST<sup>1</sup> | Records a success outcome in the breaker's internal statistics | 200 OK |
 | `/DurableCircuitBreaker/{circuitBreakerId:alpha}/RecordFailure` | POST<sup>1</sup> | Records a failure outcome in the breaker's internal statistics | 200 OK  |
-| `/DurableCircuitBreaker/{circuitBreakerId:alpha}/GetCircuitState` | GET | Returns the state of the circuit-breaker | 200 OK `Closed` |
+| `/DurableCircuitBreaker/{circuitBreakerId:alpha}/GetCircuitState` | GET | Returns the state of the circuit | 200 OK `Closed` |
+| `/DurableCircuitBreaker/{circuitBreakerId:alpha}/BreakerState` | GET | Returns the full state of the circuit-breaker, including circuit-state and when the circuit is broken until | 200 OK<br/> `{ "brokenUntil": "0001-01-01T00:00:00", "circuitState":"Closed", "consecutiveFailureCount":0, "maxConsecutiveFailures":3, "breakDuration":"00:00:05" }` |
 
 <sup>1</sup> Operations described as POST (including IsExecutionPermitted) are POST because they modify the circuit's internal statistics or state.  For the sake of easy demoing, the sample application exposes these endpoints also as GET.
 

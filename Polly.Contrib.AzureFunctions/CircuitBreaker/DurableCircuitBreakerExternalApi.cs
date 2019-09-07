@@ -40,6 +40,17 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             return new OkObjectResult((await durableCircuitBreakerClient.GetCircuitState(orchestrationClient, circuitBreakerId, log)).ToString());
         }
 
+        [FunctionName("GetBreakerState")]
+        public async Task<IActionResult> GetBreakerState(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "DurableCircuitBreaker/{circuitBreakerId:alpha}/GetBreakerState")]  HttpRequestMessage req,
+            string circuitBreakerId,
+            ILogger log,
+            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
+        )
+        {
+            return new OkObjectResult((await durableCircuitBreakerClient.GetBreakerState(orchestrationClient, circuitBreakerId, log)));
+        }
+
         [FunctionName("RecordSuccess")]
         public async Task<IActionResult> RecordSuccess(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = "DurableCircuitBreaker/{circuitBreakerId:alpha}/RecordSuccess")] HttpRequestMessage req,
