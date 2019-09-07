@@ -6,16 +6,16 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
     public interface IDurableCircuitBreakerOrchestrator
     {
-        Task<bool> IsExecutionPermittedByBreaker_ConsistencyPriority(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<bool> IsExecutionPermitted_StrongConsistency(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
-        Task<bool> IsExecutionPermittedByBreaker_PerformancePriority(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<bool> IsExecutionPermitted(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
-        Task RecordSuccessForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task RecordSuccess(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
-        Task RecordFailureForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task RecordFailure(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
-        Task<CircuitState> GetCircuitStateForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<CircuitState> GetCircuitState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
-        Task<BreakerState> GetBreakerStateForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<BreakerState> GetBreakerState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
     }
 }

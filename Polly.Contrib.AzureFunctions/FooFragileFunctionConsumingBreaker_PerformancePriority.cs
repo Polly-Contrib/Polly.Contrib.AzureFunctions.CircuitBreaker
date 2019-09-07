@@ -31,13 +31,13 @@ namespace Polly.Contrib.AzureFunctions
             )
         {
             // In the _PerformancePriority example, the underlying method determines whether execution is permitted
-            // from a read-only version of the entity state which may be cached by the entity functions runtime.
+            // from a read-only version of the entity state which may omit changes from operations on the entity which have been queued but not yet executed.
             // 
             // This returns faster (prioritizing performance).
             // The trade-off is that a true half-open state (permitting only one execution per breakDuration) cannot be maintained.
-            // In half-open state, any number of executions may be permitted until one succeeds or fails.
+            // In half-open state in the performance priority example, any number of executions will be permitted until one succeeds or fails.
 
-            if (!await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_PerformancePriority(orchestrationClient, CircuitBreakerId, log))
+            if (!await durableCircuitBreakerOrchestrator.IsExecutionPermitted(orchestrationClient, CircuitBreakerId, log))
             {
                 log.LogError($"{nameof(FooFragileFunctionConsumingBreaker_PerformancePriority)}: Service unavailable.");
 
@@ -48,13 +48,13 @@ namespace Polly.Contrib.AzureFunctions
             {
                 var result = await Foo.DoFragileWork(req, log, "circuit breaker, performance priority");
 
-                await durableCircuitBreakerOrchestrator.RecordSuccessForBreaker(orchestrationClient, CircuitBreakerId, log);
+                await durableCircuitBreakerOrchestrator.RecordSuccess(orchestrationClient, CircuitBreakerId, log);
 
                 return result;
             }
             catch (Exception exception)
             {
-                await durableCircuitBreakerOrchestrator.RecordFailureForBreaker(orchestrationClient, CircuitBreakerId, log);
+                await durableCircuitBreakerOrchestrator.RecordFailure(orchestrationClient, CircuitBreakerId, log);
 
                 log.LogError(exception, $"{nameof(FooFragileFunctionConsumingBreaker_PerformancePriority)}: Exception: {exception.Message}");
 

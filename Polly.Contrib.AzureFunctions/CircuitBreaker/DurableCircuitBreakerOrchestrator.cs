@@ -30,7 +30,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             this.serviceProvider = serviceProvider;
         }
 
-        public async Task<bool> IsExecutionPermittedByBreaker_ConsistencyPriority(
+        public async Task<bool> IsExecutionPermitted_StrongConsistency(
             IDurableOrchestrationClient orchestrationClient, 
             string circuitBreakerId,
             ILogger log)
@@ -100,21 +100,21 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             return true;
         }
 
-        public async Task RecordSuccessForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
+        public async Task RecordSuccess(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
         {
             log.LogCircuitBreakerMessage(circuitBreakerId, $"Recording success for circuit-breaker = '{circuitBreakerId}'.");
 
             await orchestrationClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordSuccess);
         }
 
-        public async Task RecordFailureForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
+        public async Task RecordFailure(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
         {
             log.LogCircuitBreakerMessage(circuitBreakerId, $"Recording failure for circuit-breaker = '{circuitBreakerId}'.");
 
             await orchestrationClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordFailure);
         }
 
-        public async Task<CircuitState> GetCircuitStateForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
+        public async Task<CircuitState> GetCircuitState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
         {
             log.LogCircuitBreakerMessage(circuitBreakerId, $"Getting state for circuit-breaker = '{circuitBreakerId}'.");
 
@@ -124,7 +124,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             return readState.EntityExists && readState.EntityState != null ? readState.EntityState.CircuitState : CircuitState.Closed;
         }
 
-        public async Task<BreakerState> GetBreakerStateForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
+        public async Task<BreakerState> GetBreakerState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
         {
             log.LogCircuitBreakerMessage(circuitBreakerId, $"Getting state for circuit-breaker = '{circuitBreakerId}'.");
 
@@ -161,7 +161,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             return XmlConvert.ToTimeSpan(ConfigurationHelper.GetCircuitConfiguration(circuitBreakerId, configurationItem) ?? defaultTimeSpan);
         }
 
-        public async Task<bool> IsExecutionPermittedByBreaker_PerformancePriority(
+        public async Task<bool> IsExecutionPermitted(
             IDurableOrchestrationClient orchestrationClient, 
             string circuitBreakerId,
             ILogger log)
@@ -177,7 +177,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             var cachePolicy = GetCachePolicyForBreaker(circuitBreakerId);
             var context = new Context($"{DurableCircuitBreakerKeyPrefix}{circuitBreakerId}");
             var breakerState = await
-                cachePolicy.ExecuteAsync(ctx => GetBreakerStateForBreaker(orchestrationClient, circuitBreakerId, log), context);
+                cachePolicy.ExecuteAsync(ctx => GetBreakerState(orchestrationClient, circuitBreakerId, log), context);
 
             bool isExecutionPermitted;
             if (breakerState == null)

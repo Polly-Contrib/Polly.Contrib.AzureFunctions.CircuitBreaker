@@ -26,7 +26,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult(await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_PerformancePriority(orchestrationClient, circuitBreakerId, log));
+            return new OkObjectResult(await durableCircuitBreakerOrchestrator.IsExecutionPermitted(orchestrationClient, circuitBreakerId, log));
         }
 
         [FunctionName("GetCircuitState")]
@@ -37,7 +37,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult((await durableCircuitBreakerOrchestrator.GetCircuitStateForBreaker(orchestrationClient, circuitBreakerId, log)).ToString());
+            return new OkObjectResult((await durableCircuitBreakerOrchestrator.GetCircuitState(orchestrationClient, circuitBreakerId, log)).ToString());
         }
 
         [FunctionName("RecordSuccess")]
@@ -49,7 +49,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            await durableCircuitBreakerOrchestrator.RecordSuccessForBreaker(orchestrationClient, circuitBreakerId, log);
+            await durableCircuitBreakerOrchestrator.RecordSuccess(orchestrationClient, circuitBreakerId, log);
             return new OkResult();
         }
 
@@ -62,7 +62,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            await durableCircuitBreakerOrchestrator.RecordFailureForBreaker(orchestrationClient, circuitBreakerId, log);
+            await durableCircuitBreakerOrchestrator.RecordFailure(orchestrationClient, circuitBreakerId, log);
             return new OkResult();
         }
 

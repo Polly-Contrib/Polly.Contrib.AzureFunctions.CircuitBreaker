@@ -35,7 +35,7 @@ namespace Polly.Contrib.AzureFunctions
             // This makes operations entirely faithful to the state of the breaker at any time,
             // and allows us to restrict executions in the half-open state to a limited number of trial executions.
 
-            if (!await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_ConsistencyPriority(orchestrationClient, CircuitBreakerId, log))
+            if (!await durableCircuitBreakerOrchestrator.IsExecutionPermitted_StrongConsistency(orchestrationClient, CircuitBreakerId, log))
             {
                 log.LogError($"{nameof(FooFragileFunctionConsumingBreaker_ConsistencyPriority)}: Service unavailable.");
 
@@ -46,13 +46,13 @@ namespace Polly.Contrib.AzureFunctions
             {
                 var result = await Foo.DoFragileWork(req, log, "circuit breaker, consistency priority");
 
-                await durableCircuitBreakerOrchestrator.RecordSuccessForBreaker(orchestrationClient, CircuitBreakerId, log);
+                await durableCircuitBreakerOrchestrator.RecordSuccess(orchestrationClient, CircuitBreakerId, log);
 
                 return result;
             }
             catch (Exception exception)
             {
-                await durableCircuitBreakerOrchestrator.RecordFailureForBreaker(orchestrationClient, CircuitBreakerId, log);
+                await durableCircuitBreakerOrchestrator.RecordFailure(orchestrationClient, CircuitBreakerId, log);
 
                 log.LogError(exception, $"{nameof(FooFragileFunctionConsumingBreaker_ConsistencyPriority)}: Exception: {exception.Message}");
 
