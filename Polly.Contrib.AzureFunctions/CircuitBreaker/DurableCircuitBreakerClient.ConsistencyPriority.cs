@@ -61,6 +61,34 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             return await orchestrationContext.CallEntityAsync<bool>(DurableCircuitBreakerEntity.GetEntityId(breakerId), DurableCircuitBreakerEntity.Operation.IsExecutionPermitted);
         }
 
+        public async Task RecordSuccess(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log)
+        {
+            log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording success for circuit-breaker = '{circuitBreakerId}'.");
+
+            await orchestrationContext.CallEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordSuccess);
+        }
+
+        public async Task RecordFailure(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log)
+        {
+            log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording failure for circuit-breaker = '{circuitBreakerId}'.");
+
+            await orchestrationContext.CallEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordFailure);
+        }
+
+        public async Task<CircuitState> GetCircuitState(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log)
+        {
+            log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting circuit state for circuit-breaker = '{circuitBreakerId}'.");
+
+            return await orchestrationContext.CallEntityAsync<CircuitState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.GetCircuitState);
+        }
+
+        public async Task<BreakerState> GetBreakerState(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log)
+        {
+            log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting breaker state for circuit-breaker = '{circuitBreakerId}'.");
+
+            return await orchestrationContext.CallEntityAsync<BreakerState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.GetBreakerState);
+        }
+
         private async Task<(bool?, OrchestrationRuntimeStatus)> WaitForCompletionOrTimeout(
             string executionPermittedInstanceId,
             (TimeSpan timeout, TimeSpan retryInterval) checkCircuitConfiguration,

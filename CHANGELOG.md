@@ -1,6 +1,7 @@
 ## 1.0.0-preview7
 
 - Simplify code naming and presentation
+- Add more methods on IDurableCircuitBreakerClient, for use within orchestration functions
 - Add GetBreakerState as a function available via the external API
 - Allow circuit-breaker logging to be optional
 

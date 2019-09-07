@@ -10,8 +10,6 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
         Task<bool> IsExecutionPermitted_StrongConsistency(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
-        Task<bool> IsExecutionPermitted(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
-
         Task RecordSuccess(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
         Task RecordFailure(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
@@ -19,5 +17,15 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         Task<CircuitState> GetCircuitState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
         Task<BreakerState> GetBreakerState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+
+        Task<bool> IsExecutionPermitted(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
+
+        Task RecordSuccess(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
+
+        Task RecordFailure(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
+
+        Task<CircuitState> GetCircuitState(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
+
+        Task<BreakerState> GetBreakerState(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
     }
 }

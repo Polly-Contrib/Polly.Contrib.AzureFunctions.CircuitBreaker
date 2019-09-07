@@ -16,6 +16,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             public const string IsExecutionPermitted = "IsExecutionPermitted";
             public const string RecordSuccess = "RecordSuccess";
             public const string RecordFailure = "RecordFailure";
+            public const string GetBreakerState = "GetBreakerState";
             public const string GetCircuitState = "GetCircuitState";
         }
 
@@ -36,6 +37,10 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
                 case Operation.RecordFailure:
                     context.Return(RecordFailure(context, log));
+                    break;
+
+                case Operation.GetBreakerState:
+                    context.Return(GetBreakerState(context, log));
                     break;
 
                 case Operation.GetCircuitState:
