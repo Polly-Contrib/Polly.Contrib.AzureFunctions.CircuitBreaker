@@ -16,9 +16,6 @@ namespace Polly.Contrib.AzureFunctions
         // Uniquely identifies the circuit-breaker instance guarding this operation.
         private const string CircuitBreakerId = nameof(FooFragileFunctionConsumingBreaker_PerformancePriority);
 
-        // Used by this demonstration code to generate random failures of the simulated work.
-        private static readonly Random Rand = new Random();
-
         private readonly IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator;
 
         public FooFragileFunctionConsumingBreaker_PerformancePriority(IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator)
@@ -49,7 +46,7 @@ namespace Polly.Contrib.AzureFunctions
 
             try
             {
-                var result = await OriginalFunctionMethod(req, log);
+                var result = await Foo.DoFragileWork(req, log, "circuit breaker, performance priority");
 
                 await durableCircuitBreakerOrchestrator.RecordSuccessForBreaker(orchestrationClient, CircuitBreakerId, log);
 
@@ -63,24 +60,6 @@ namespace Polly.Contrib.AzureFunctions
 
                 return new InternalServerErrorResult();
             }
-        }
-        
-        private static async Task<IActionResult> OriginalFunctionMethod(HttpRequestMessage req, ILogger log)
-        {
-            // Do something fragile!
-            if (Rand.Next(2) == 0)
-            {
-                /*await Task.Delay(TimeSpan.FromSeconds(1));*/
-                throw new Exception("Something fragile went wrong.");
-            }
-
-            // Do some work and return some result.
-            await Task.CompletedTask;
-
-            var helloWorld = "Hello world: from inside the function guarded by the circuit-breaker.";
-            log.LogInformation(helloWorld);
-
-            return new OkObjectResult(helloWorld);
         }
     }
 }
