@@ -1,3 +1,7 @@
+## 1.0.0-preview5
+
+- Rearrange solution to place functions in the root folder, circuit-breaker classes a subfolder
+
 ## 1.0.0-preview4
 
 - Switch breaker accessible by external API to throughput priority mode

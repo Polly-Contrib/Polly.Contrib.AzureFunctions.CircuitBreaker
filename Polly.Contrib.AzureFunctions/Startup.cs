@@ -2,11 +2,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Polly.Caching;
 using Polly.Caching.Memory;
+using Polly.Contrib.AzureFunctions.CircuitBreaker;
 using Polly.Registry;
 
-[assembly: FunctionsStartup(typeof(Polly.Contrib.AzureFunctions.CircuitBreaker.Examples.Startup))]
+[assembly: FunctionsStartup(typeof(Polly.Contrib.AzureFunctions.Startup))]
 
-namespace Polly.Contrib.AzureFunctions.CircuitBreaker.Examples
+namespace Polly.Contrib.AzureFunctions
 {
     public class Startup : FunctionsStartup
     {

@@ -6,7 +6,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 
-namespace Polly.Contrib.AzureFunctions.CircuitBreaker.Examples
+namespace Polly.Contrib.AzureFunctions
 {
     public class FooFragileFunction_Unguarded
     {
