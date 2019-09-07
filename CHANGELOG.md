@@ -1,3 +1,7 @@
+## 1.0.0-preview7
+
+- Simplify code naming and presentation
+
 ## 1.0.0-preview6
 
 - Rename modes to **performance priority** and **consistency priority**

@@ -10,14 +10,19 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         internal static string GetCircuitConfiguration(string circuitBreakerId, string configurationItem)
             => Environment.GetEnvironmentVariable($"CircuitBreakerSettings:{circuitBreakerId}:{configurationItem}", EnvironmentVariableTarget.Process);
 
+        internal static TimeSpan GetCircuitConfigurationTimeSpan(string circuitBreakerId, string configurationItem, string defaultTimeSpan)
+        {
+            return XmlConvert.ToTimeSpan(GetCircuitConfiguration(circuitBreakerId, configurationItem) ?? defaultTimeSpan);
+        }
+
         internal static BreakerState ConfigureCircuitBreaker(IDurableEntityContext context, ILogger log)
         {
             string circuitBreakerId = context.Self.EntityKey;
             log.LogCircuitBreakerMessage(circuitBreakerId, $"Setting configuration for circuit-breaker {circuitBreakerId}.");
 
             // Intentionally no defaults - users should consciously decide what tolerances suit the operations invoked through the circuit-breaker.
-            TimeSpan breakDuration = XmlConvert.ToTimeSpan(ConfigurationHelper.GetCircuitConfiguration(circuitBreakerId, "BreakDuration"));
-            int maxConsecutiveFailures = Convert.ToInt32(ConfigurationHelper.GetCircuitConfiguration(circuitBreakerId, "MaxConsecutiveFailures"));
+            TimeSpan breakDuration = XmlConvert.ToTimeSpan(GetCircuitConfiguration(circuitBreakerId, "BreakDuration"));
+            int maxConsecutiveFailures = Convert.ToInt32(GetCircuitConfiguration(circuitBreakerId, "MaxConsecutiveFailures"));
 
             var breakerState = new BreakerState
             {
