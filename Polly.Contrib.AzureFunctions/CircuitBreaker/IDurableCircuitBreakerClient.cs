@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
-    public interface IDurableCircuitBreakerOrchestrator
+    public interface IDurableCircuitBreakerClient
     {
         Task<bool> IsExecutionPermitted_StrongConsistency(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 

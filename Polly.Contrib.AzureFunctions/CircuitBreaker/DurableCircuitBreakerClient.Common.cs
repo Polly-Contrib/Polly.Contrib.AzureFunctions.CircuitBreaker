@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
-    public partial class DurableCircuitBreakerOrchestrator : IDurableCircuitBreakerOrchestrator
+    public partial class DurableCircuitBreakerClient : IDurableCircuitBreakerClient
     {
         private const string DurableCircuitBreakerKeyPrefix = "DurableCircuitBreaker-";
 

@@ -16,9 +16,9 @@ namespace Polly.Contrib.AzureFunctions
         // Uniquely identifies the circuit-breaker instance guarding this operation.
         private const string CircuitBreakerId = nameof(FooFragileFunctionConsumingBreaker_PerformancePriority);
 
-        private readonly IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator;
+        private readonly IDurableCircuitBreakerClient durableCircuitBreakerOrchestrator;
 
-        public FooFragileFunctionConsumingBreaker_PerformancePriority(IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator)
+        public FooFragileFunctionConsumingBreaker_PerformancePriority(IDurableCircuitBreakerClient durableCircuitBreakerOrchestrator)
         {
             this.durableCircuitBreakerOrchestrator = durableCircuitBreakerOrchestrator;
         }

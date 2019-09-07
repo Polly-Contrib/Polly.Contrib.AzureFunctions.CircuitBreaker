@@ -17,7 +17,7 @@ namespace Polly.Contrib.AzureFunctions
             builder.Services.AddSingleton<IAsyncCacheProvider, MemoryCacheProvider>();
             builder.Services.AddSingleton<IPolicyRegistry<string>>(new PolicyRegistry());
 
-            builder.Services.AddSingleton<IDurableCircuitBreakerOrchestrator, DurableCircuitBreakerOrchestrator>();
+            builder.Services.AddSingleton<IDurableCircuitBreakerClient, DurableCircuitBreakerClient>();
         }
     }
 }

@@ -8,14 +8,14 @@ using Polly.Registry;
 
 namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
-    public partial class DurableCircuitBreakerOrchestrator : IDurableCircuitBreakerOrchestrator
+    public partial class DurableCircuitBreakerClient : IDurableCircuitBreakerClient
     {
         private const string DefaultPerformancePriorityCheckCircuitInterval = "PT5S";
 
         private readonly IPolicyRegistry<string> policyRegistry;
         private readonly IServiceProvider serviceProvider;
 
-        public DurableCircuitBreakerOrchestrator(
+        public DurableCircuitBreakerClient(
             IPolicyRegistry<string> policyRegistry,
             IServiceProvider serviceProvider)
         {

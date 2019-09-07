@@ -204,8 +204,8 @@ The implementation makes lightweight use of the new Entity Functions persistence
 
 | File | Kind | Role |
 | --- | --- | --- |
-|`DurableCircuitBreaker`|durable entity function|contains the core circuit-breaker logic. Defines and implements four operations:<br/>+ `IsExecutionPermitted`<br/>+ `RecordSuccess`<br/>+ `RecordFailure`<br/> + `GetCircuitState`|
-|`DurableCircuitBreakerOrchestrator`|orchestrator function and static helper methods|Internal helper methods for orchestrating calls through the circuit-breaker |
+|`DurableCircuitBreakerEntity`|durable entity function|contains the core circuit-breaker logic. Defines and implements four operations:<br/>+ `IsExecutionPermitted`<br/>+ `RecordSuccess`<br/>+ `RecordFailure`<br/> + `GetCircuitState`|
+|`I/DurableCircuitBreakerClient`|methods for consumption by functions|Defines methods for querying and invoking actions on the circuit entity|
 |`DurableCircuitBreakerExternalApi`|http-triggered functions|an external API for consuming the durable circuit-breaker from anywhere, over http|
 |`local.settings.json`|configuration environment variables|demonstrates configuration for circuit-breaker instances|
 |`FooFragileFunction_*`|Standard http-triggered function|demonstrates a standard Azure function executing its work through the circuit-breaker|

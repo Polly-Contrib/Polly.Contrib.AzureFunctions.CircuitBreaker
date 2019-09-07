@@ -9,10 +9,10 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
     public class DurableCircuitBreakerExternalApi
     {
-        private readonly IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator;
+        private readonly IDurableCircuitBreakerClient durableCircuitBreakerOrchestrator;
 
         public DurableCircuitBreakerExternalApi(
-            IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator)
+            IDurableCircuitBreakerClient durableCircuitBreakerOrchestrator)
         {
             this.durableCircuitBreakerOrchestrator = durableCircuitBreakerOrchestrator;
         }
