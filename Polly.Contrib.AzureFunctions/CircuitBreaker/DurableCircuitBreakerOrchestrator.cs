@@ -15,7 +15,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         private const string DefaultConsistencyPriorityCheckCircuitTimeout = "PT2S";
         private const string DefaultConsistencyPriorityCheckCircuitRetryInterval = "PT0.25S";
 
-        private const string DurableCircuitBreakerKeyPrefix = nameof(DurableCircuitBreakerOrchestrator) + "-";
+        private const string DurableCircuitBreakerKeyPrefix = "DurableCircuitBreaker-";
         private const string DefaultPerformancePriorityCheckCircuitInterval = "PT5S";
 
 
