@@ -158,7 +158,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
         private TimeSpan GetCircuitConfigurationTimeSpan(string circuitBreakerId, string configurationItem, string defaultTimeSpan)
         {
-            return XmlConvert.ToTimeSpan(DurableCircuitBreakerEntity.GetCircuitConfiguration(circuitBreakerId, configurationItem) ?? defaultTimeSpan);
+            return XmlConvert.ToTimeSpan(ConfigurationHelper.GetCircuitConfiguration(circuitBreakerId, configurationItem) ?? defaultTimeSpan);
         }
 
         public async Task<bool> IsExecutionPermittedByBreaker_ThroughputPriority(

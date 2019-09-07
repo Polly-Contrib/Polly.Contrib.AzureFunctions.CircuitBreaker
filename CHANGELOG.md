@@ -1,6 +1,7 @@
 ## 1.0.0-preview5
 
 - Rearrange solution to place functions in the root folder, circuit-breaker classes a subfolder
+- Separate configuration code from durable entity code
 
 ## 1.0.0-preview4
 

@@ -17,7 +17,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             LogLevel level;
             try
             {
-                level = (LogLevel)Enum.Parse(typeof(LogLevel), DurableCircuitBreakerEntity.GetCircuitConfiguration(circuitBreakerId, "LogLevel") ?? DefaultLogLevel.ToString());
+                level = (LogLevel)Enum.Parse(typeof(LogLevel), ConfigurationHelper.GetCircuitConfiguration(circuitBreakerId, "LogLevel") ?? DefaultLogLevel.ToString());
             }
             catch
             {
