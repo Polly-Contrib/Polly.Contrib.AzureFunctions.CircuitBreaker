@@ -1,6 +1,7 @@
 ## 1.0.0-preview6
 
 - Rename modes to **performance priority** and **consistency priority**
+- Add local settings (enables immediate trialling)
 
 ## 1.0.0-preview5
 
