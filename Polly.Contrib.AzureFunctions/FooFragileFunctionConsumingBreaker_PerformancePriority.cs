@@ -16,11 +16,11 @@ namespace Polly.Contrib.AzureFunctions
         // Uniquely identifies the circuit-breaker instance guarding this operation.
         private const string CircuitBreakerId = nameof(FooFragileFunctionConsumingBreaker_PerformancePriority);
 
-        private readonly IDurableCircuitBreakerClient durableCircuitBreakerOrchestrator;
+        private readonly IDurableCircuitBreakerClient durableCircuitBreakerClient;
 
-        public FooFragileFunctionConsumingBreaker_PerformancePriority(IDurableCircuitBreakerClient durableCircuitBreakerOrchestrator)
+        public FooFragileFunctionConsumingBreaker_PerformancePriority(IDurableCircuitBreakerClient durableCircuitBreakerClient)
         {
-            this.durableCircuitBreakerOrchestrator = durableCircuitBreakerOrchestrator;
+            this.durableCircuitBreakerClient = durableCircuitBreakerClient;
         }
 
         [FunctionName("FooFragileFunctionConsumingBreaker_PerformancePriority")]
@@ -37,7 +37,7 @@ namespace Polly.Contrib.AzureFunctions
             // The trade-off is that a true half-open state (permitting only one execution per breakDuration) cannot be maintained.
             // In half-open state in the performance priority example, any number of executions will be permitted until one succeeds or fails.
 
-            if (!await durableCircuitBreakerOrchestrator.IsExecutionPermitted(orchestrationClient, CircuitBreakerId, log))
+            if (!await durableCircuitBreakerClient.IsExecutionPermitted(orchestrationClient, CircuitBreakerId, log))
             {
                 log.LogError($"{nameof(FooFragileFunctionConsumingBreaker_PerformancePriority)}: Service unavailable.");
 
@@ -48,13 +48,13 @@ namespace Polly.Contrib.AzureFunctions
             {
                 var result = await Foo.DoFragileWork(req, log, "circuit breaker, performance priority");
 
-                await durableCircuitBreakerOrchestrator.RecordSuccess(orchestrationClient, CircuitBreakerId, log);
+                await durableCircuitBreakerClient.RecordSuccess(orchestrationClient, CircuitBreakerId, log);
 
                 return result;
             }
             catch (Exception exception)
             {
-                await durableCircuitBreakerOrchestrator.RecordFailure(orchestrationClient, CircuitBreakerId, log);
+                await durableCircuitBreakerClient.RecordFailure(orchestrationClient, CircuitBreakerId, log);
 
                 log.LogError(exception, $"{nameof(FooFragileFunctionConsumingBreaker_PerformancePriority)}: Exception: {exception.Message}");
 
