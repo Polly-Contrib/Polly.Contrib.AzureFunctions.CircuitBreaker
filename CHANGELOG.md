@@ -1,3 +1,7 @@
+## 1.0.0-preview6
+
+- Rename modes to **performance priority** and **consistency priority**
+
 ## 1.0.0-preview5
 
 - Rearrange solution to place functions in the root folder, circuit-breaker classes a subfolder

@@ -11,38 +11,38 @@ using Polly.Contrib.AzureFunctions.CircuitBreaker;
 
 namespace Polly.Contrib.AzureFunctions
 {
-    public class FooFragileFunctionConsumingBreaker_ThroughputPriority
+    public class FooFragileFunctionConsumingBreaker_PerformancePriority
     {
         // Uniquely identifies the circuit-breaker instance guarding this operation.
-        private const string CircuitBreakerId = nameof(FooFragileFunctionConsumingBreaker_ThroughputPriority);
+        private const string CircuitBreakerId = nameof(FooFragileFunctionConsumingBreaker_PerformancePriority);
 
         // Used by this demonstration code to generate random failures of the simulated work.
         private static readonly Random Rand = new Random();
 
         private readonly IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator;
 
-        public FooFragileFunctionConsumingBreaker_ThroughputPriority(IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator)
+        public FooFragileFunctionConsumingBreaker_PerformancePriority(IDurableCircuitBreakerOrchestrator durableCircuitBreakerOrchestrator)
         {
             this.durableCircuitBreakerOrchestrator = durableCircuitBreakerOrchestrator;
         }
 
-        [FunctionName("FooFragileFunctionConsumingBreaker_ThroughputPriority")]
+        [FunctionName("FooFragileFunctionConsumingBreaker_PerformancePriority")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestMessage req,
             ILogger log,
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
             )
         {
-            // In the _ThroughputPriority example, the underlying method determines whether execution is permitted
+            // In the _PerformancePriority example, the underlying method determines whether execution is permitted
             // from a read-only version of the entity state which may be cached by the entity functions runtime.
             // 
-            // This returns faster (prioritizing throughput).
+            // This returns faster (prioritizing performance).
             // The trade-off is that a true half-open state (permitting only one execution per breakDuration) cannot be maintained.
             // In half-open state, any number of executions may be permitted until one succeeds or fails.
 
-            if (!await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_ThroughputPriority(orchestrationClient, CircuitBreakerId, log))
+            if (!await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_PerformancePriority(orchestrationClient, CircuitBreakerId, log))
             {
-                log.LogError($"{nameof(FooFragileFunctionConsumingBreaker_ThroughputPriority)}: Service unavailable.");
+                log.LogError($"{nameof(FooFragileFunctionConsumingBreaker_PerformancePriority)}: Service unavailable.");
 
                 return new StatusCodeResult((int)HttpStatusCode.ServiceUnavailable);
             }
@@ -59,7 +59,7 @@ namespace Polly.Contrib.AzureFunctions
             {
                 await durableCircuitBreakerOrchestrator.RecordFailureForBreaker(orchestrationClient, CircuitBreakerId, log);
 
-                log.LogError(exception, $"{nameof(FooFragileFunctionConsumingBreaker_ThroughputPriority)}: Exception: {exception.Message}");
+                log.LogError(exception, $"{nameof(FooFragileFunctionConsumingBreaker_PerformancePriority)}: Exception: {exception.Message}");
 
                 return new InternalServerErrorResult();
             }

@@ -12,11 +12,11 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
     public class DurableCircuitBreakerOrchestrator : IDurableCircuitBreakerOrchestrator
     {
-        private const string DefaultFidelityPriorityCheckCircuitTimeout = "PT2S";
-        private const string DefaultFidelityPriorityCheckCircuitRetryInterval = "PT0.25S";
+        private const string DefaultConsistencyPriorityCheckCircuitTimeout = "PT2S";
+        private const string DefaultConsistencyPriorityCheckCircuitRetryInterval = "PT0.25S";
 
         private const string DurableCircuitBreakerKeyPrefix = nameof(DurableCircuitBreakerOrchestrator) + "-";
-        private const string DefaultThroughputPriorityCheckCircuitInterval = "PT5S";
+        private const string DefaultPerformancePriorityCheckCircuitInterval = "PT5S";
 
 
         private readonly IPolicyRegistry<string> policyRegistry;
@@ -30,12 +30,12 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             this.serviceProvider = serviceProvider;
         }
 
-        public async Task<bool> IsExecutionPermittedByBreaker_FidelityPriority(
+        public async Task<bool> IsExecutionPermittedByBreaker_ConsistencyPriority(
             IDurableOrchestrationClient orchestrationClient, 
             string circuitBreakerId,
             ILogger log)
         {
-            log.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (fidelity priority) for circuit-breaker = '{circuitBreakerId}'.");
+            log.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (consistency priority) for circuit-breaker = '{circuitBreakerId}'.");
 
             // The circuit-breaker can be configured with a maximum time you are prepared to wait to obtain the current circuit state; this allows you to limit the circuit-breaker itself introducing unwanted excessive latency.
             var checkCircuitConfiguration = GetCheckCircuitConfiguration(circuitBreakerId);
@@ -57,7 +57,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
                         try
                         {
                             bool isExecutionPermitted = status.Output.ToObject<bool>();
-                            log.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (fidelity priority) for circuit-breaker = '{circuitBreakerId}' returned: {isExecutionPermitted}.");
+                            log.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (consistency priority) for circuit-breaker = '{circuitBreakerId}' returned: {isExecutionPermitted}.");
                             return isExecutionPermitted;
                         }
                         catch
@@ -93,7 +93,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             // We have to choose a course of action for when the circuit-breaker does not report state in a timely manner.
             
             // We log.  Production apps could of course alert (directly here or indirectly by configured alerts) on the circuit-breaker not responding in a timely manner.
-            log.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (fidelity priority) for circuit-breaker = '{circuitBreakerId}': {failure}.");
+            log.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (consistency priority) for circuit-breaker = '{circuitBreakerId}': {failure}.");
 
             // Here, we choose to gracefully drop the circuit-breaker functionality and permit the execution
             // (rather than a more aggressive option of, say, failing the execution).
@@ -150,8 +150,8 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
         private (TimeSpan timeout, TimeSpan retryInterval) GetCheckCircuitConfiguration(string circuitBreakerId)
         {
-            TimeSpan checkCircuitTimeout = GetCircuitConfigurationTimeSpan(circuitBreakerId, "FidelityPriorityCheckCircuitTimeout", DefaultFidelityPriorityCheckCircuitTimeout);
-            TimeSpan checkCircuitRetryInterval = GetCircuitConfigurationTimeSpan(circuitBreakerId, "FidelityPriorityCheckCircuitRetryInterval", DefaultFidelityPriorityCheckCircuitRetryInterval);
+            TimeSpan checkCircuitTimeout = GetCircuitConfigurationTimeSpan(circuitBreakerId, "ConsistencyPriorityCheckCircuitTimeout", DefaultConsistencyPriorityCheckCircuitTimeout);
+            TimeSpan checkCircuitRetryInterval = GetCircuitConfigurationTimeSpan(circuitBreakerId, "ConsistencyPriorityCheckCircuitRetryInterval", DefaultConsistencyPriorityCheckCircuitRetryInterval);
 
             return (checkCircuitTimeout, checkCircuitRetryInterval);
         }
@@ -161,18 +161,18 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             return XmlConvert.ToTimeSpan(ConfigurationHelper.GetCircuitConfiguration(circuitBreakerId, configurationItem) ?? defaultTimeSpan);
         }
 
-        public async Task<bool> IsExecutionPermittedByBreaker_ThroughputPriority(
+        public async Task<bool> IsExecutionPermittedByBreaker_PerformancePriority(
             IDurableOrchestrationClient orchestrationClient, 
             string circuitBreakerId,
             ILogger log)
         {
-            // The throughput priority approach reads the circuit-breaker entity state from outside.
+            // The performance priority approach reads the circuit-breaker entity state from outside.
             // Per Azure Entity Functions documentation, this may be stale if other operations on the entity have been queued but not yet actioned,
             // but it returns faster than actually executing an operation on the entity (which would queue as a serialized operation against others).
 
             // The trade-off is that a true half-open state (permitting only one execution per breakDuration) cannot be maintained.
 
-            log.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (throughput priority) for circuit-breaker = '{circuitBreakerId}'.");
+            log.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (performance priority) for circuit-breaker = '{circuitBreakerId}'.");
 
             var cachePolicy = GetCachePolicyForBreaker(circuitBreakerId);
             var context = new Context($"{DurableCircuitBreakerKeyPrefix}{circuitBreakerId}");
@@ -189,7 +189,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             else if (breakerState.CircuitState == CircuitState.HalfOpen || breakerState.CircuitState == CircuitState.Open)
             {
                 // If the circuit is open or half-open, we permit executions if the broken-until period has passed.
-                // Unlike the Fidelity mode, we cannot control (since we only read state, not update it) how many executions are permitted in this state.
+                // Unlike the Consistency mode, we cannot control (since we only read state, not update it) how many executions are permitted in this state.
                 // However, the first execution to fail in half-open state will push out the BrokenUntil time by BreakDuration, blocking executions until the next BreakDuration has passed.
                 isExecutionPermitted = DateTime.UtcNow > breakerState.BrokenUntil;
             }
@@ -202,7 +202,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
                 throw new InvalidOperationException();
             }
 
-            log.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (throughput priority) for circuit-breaker = '{circuitBreakerId}' returned: {isExecutionPermitted}.");
+            log.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (performance priority) for circuit-breaker = '{circuitBreakerId}' returned: {isExecutionPermitted}.");
             return isExecutionPermitted;
         }
 
@@ -216,7 +216,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
                 return cachePolicy;
             }
 
-            TimeSpan checkCircuitInterval = GetCircuitConfigurationTimeSpan(circuitBreakerId, "ThroughputPriorityCheckCircuitInterval", DefaultThroughputPriorityCheckCircuitInterval);
+            TimeSpan checkCircuitInterval = GetCircuitConfigurationTimeSpan(circuitBreakerId, "PerformancePriorityCheckCircuitInterval", DefaultPerformancePriorityCheckCircuitInterval);
             cachePolicy = Policy.CacheAsync<BreakerState>(
                 serviceProvider
                     .GetRequiredService<IAsyncCacheProvider>()

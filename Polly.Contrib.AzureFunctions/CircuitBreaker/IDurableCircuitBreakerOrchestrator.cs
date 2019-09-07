@@ -6,9 +6,9 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
     public interface IDurableCircuitBreakerOrchestrator
     {
-        Task<bool> IsExecutionPermittedByBreaker_FidelityPriority(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<bool> IsExecutionPermittedByBreaker_ConsistencyPriority(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
-        Task<bool> IsExecutionPermittedByBreaker_ThroughputPriority(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<bool> IsExecutionPermittedByBreaker_PerformancePriority(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
         Task RecordSuccessForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 

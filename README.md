@@ -20,7 +20,9 @@ The breaker behaves as a consecutive-count circuit-breaker, as described for the
 + In **Closed** state, the circuit-breaker permits executions and counts consecutive failures.
 + If a configuration threshold `MaxConsecutiveFailures` is met, the circuit transitions to **Open** for a duration of `BreakDuration`.
 + In **Open** state executions are blocked, and fail fast.
-+ After `BreakDuration`, the circuit transitions to **half-open** state, and a single<sup>(in Fidelity mode)</sup> test-execution is permitted: if it succeeds, the circuit _closes_ again; if it fails, the circuit _opens_ again.
++ After `BreakDuration`, the circuit transitions to **half-open** state, and test-executions (in Consistency mode only a single test execution) is/are permitted
+  - if a test execution succeeds, the circuit _closes_ again
+  - if a test execution fails, the circuit _opens_ again.
 
 For more detail, see the [original Polly circuit-breaker wiki](https://github.com/App-vNext/Polly/wiki/Circuit-Breaker).
 
@@ -28,19 +30,19 @@ The Azure functions implementation manages multiple circuit-breaker instances, e
 
 ## Executing code through a circuit-breaker from within an Azure function
 
-The `Examples` folder demonstrates two different modes in which we can consume the circuit-breaker from within Azure Functions: **fidelity priority** and **throughput priority**.
+The function examples demonstrate two different modes in which we can consume the circuit-breaker from within Azure Functions: **consistency priority** and **performance priority**.
 
-### Fidelity priority
+### Consistency priority
 
-**Fidelity priority** checks with the circuit-breaker, to determine whether the execution is permitted, for each execution through the breaker.  It uses the strongly-consistent APIs on the entity function to do so.
+**Consistency priority** checks with the circuit-breaker, to determine whether the execution is permitted, for each execution through the breaker.  It uses the strongly-consistent APIs on the entity function to do so.
 
 This provides behaviour completely faithful to the classic circuit-breaker pattern described in **Conceptual overview** above.
 
-#### Executing code through the breaker: Fidelity priority
+#### Executing code through the breaker: Consistency priority
 
-To execute code through a circuit breaker within an Azure function, adopt the pattern shown in `FooFragileFunctionConsumingBreaker_FidelityPriority`:
+To execute code through a circuit breaker within an Azure function, adopt the pattern shown in `FooFragileFunctionConsumingBreaker_ConsistencyPriority`:
 
-    if (!await orchestrationClient.IsExecutionPermittedByBreaker_FidelityPriority(CircuitBreakerId, log))
+    if (!await orchestrationClient.IsExecutionPermittedByBreaker_ConsistencyPriority(CircuitBreakerId, log))
     {
         // We throw an exception here to indicate the circuit is not permitting calls. Other logic could be adopted if preferred.
         throw new BrokenCircuitException();
@@ -63,9 +65,9 @@ To execute code through a circuit breaker within an Azure function, adopt the pa
 
 Of course, you can extend this pattern to filter on specific exceptions; or treat certain returned result values also as failures.
 
-### Throughput priority
+### Performance priority
 
-**Throughput priority** is designed for scenarios with high numbers of executions per second.  It uses the APIs on entity functions which prioritise performance over consistency. 
+**Performance priority** is designed for scenarios with high numbers of executions per second.  It uses the APIs on entity functions which prioritise performance over consistency. 
 
 The behaviour changes in the following ways, for performance gain:
 
@@ -73,16 +75,16 @@ The behaviour changes in the following ways, for performance gain:
 + There is a weaker guarantee in half-open state. The half-open state does not control that only one trial operation is permitted in half-open; any number are permitted.  However, the first success or failure in half-open state will cause the circuit to transition from half-open to closed or open again.
 
 
-#### Executing code through the breaker: Throughput priority
+#### Executing code through the breaker: Performance priority
 
 The pattern is identical, except for the following call to determine whether an execution is permitted:
 
-    if (!await orchestrationClient.IsExecutionPermittedByBreaker_ThroughputPriority(CircuitBreakerId, log))
+    if (!await orchestrationClient.IsExecutionPermittedByBreaker_PerformancePriority(CircuitBreakerId, log))
 
 ### Demo: Executing code through a circuit-breaker within an Azure function
 
 + Start the functions app locally [using the Azure Functions Core Tools local development experience](https://docs.microsoft.com/en-us/azure/azure-functions/functions-develop-local), or deploy to your Azure subscription and set environment variables parallel to the choices in `local.settings.json`.
-+ Hit the endpoint configured in your function app for `FooFragileFunctionConsumingBreaker_FidelityPriority` (or `FooFragileFunctionConsumingBreaker_ThroughputPriority`), repeatedly.
++ Hit the endpoint configured in your function app for `FooFragileFunctionConsumingBreaker_ConsistencyPriority` (or `FooFragileFunctionConsumingBreaker_PerformancePriority`), repeatedly.
 + The endpoint simulates an operation failing 50% of the time.
 + The sample is configured to break the circuit for 10 seconds when 2 consecutive failures have occurred.
 
@@ -171,9 +173,9 @@ All configuration values are of the form:
 | Setting name | Type | Meaning | Default <br/>(if not specified) |
 | --- | --- | --- | --- | --- |
 | `LogLevel` | `Microsoft .Extensions .Logging .LogLevel` | The level at which to log circuit events. | `LogLevel .Information` |
-| `FidelityPriorityCheckCircuitTimeout` | ISO 8601 duration | In fidelity mode, the maximum duration to wait to determine whether an execution should be permitted. (If the circuit state cannot be determined within this timespan, the execution is permitted.) |`PT2S`|
-| `FidelityPriorityCheckCircuitRetryInterval` | ISO 8601 duration | In fidelity mode, an internal setting determining how often to retry obtaining state (within the above timeout), if it is delayed. |`PT0.25S`|
-| `ThroughputPriorityCheckCircuitInterval` | ISO 8601 duration | In priority mode, the state will be memory-cached and not requeried for this period, to prioritise performance |`PT5S`|
+| `ConsistencyPriorityCheckCircuitTimeout` | ISO 8601 duration | In consistency mode, the maximum duration to wait to determine whether an execution should be permitted. (If the circuit state cannot be determined within this timespan, the execution is permitted.) |`PT2S`|
+| `ConsistencyPriorityCheckCircuitRetryInterval` | ISO 8601 duration | In consistency mode, an internal setting determining how often to retry obtaining state (within the above timeout), if it is delayed. |`PT0.25S`|
+| `PerformancePriorityCheckCircuitInterval` | ISO 8601 duration | In priority mode, the state will be memory-cached and not requeried for this period, to prioritise performance |`PT5S`|
 
 ## Scoping named circuit-breaker instances
 
