@@ -26,7 +26,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult(await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_FidelityPriority(orchestrationClient, circuitBreakerId, log));
+            return new OkObjectResult(await durableCircuitBreakerOrchestrator.IsExecutionPermittedByBreaker_ThroughputPriority(orchestrationClient, circuitBreakerId, log));
         }
 
         [FunctionName("GetCircuitState")]

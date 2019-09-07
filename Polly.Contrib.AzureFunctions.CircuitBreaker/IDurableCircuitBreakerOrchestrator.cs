@@ -11,8 +11,11 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         Task<bool> IsExecutionPermittedByBreaker_ThroughputPriority(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
 
         Task RecordSuccessForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+
         Task RecordFailureForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+
         Task<CircuitState> GetCircuitStateForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+
         Task<BreakerState> GetBreakerStateForBreaker(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
     }
 }

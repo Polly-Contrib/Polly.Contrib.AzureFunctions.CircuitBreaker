@@ -130,8 +130,6 @@ In .NET Core, the most obvious way to implement this would be to use HttpClientF
 
 The `GetCircuitState` endpoint is provided for information. It is not required to use it, to operate the circuit-breaker.
 
-To compare with the modes (fidelity and priority) available for in-functions use of the breaker, the breaker consumed over the http api operates in fidelity mode. Optimisations made by throughput-priority in the functions case, such as only checking circuit-state at given intervals, would be made on the caller side (before calling the breaker over http), when consuming the breaker over http.
-
 ### Demo: Consuming as a distributed circuit-breaker over http
 
 + Start the functions app locally [using the Azure Functions Core Tools local development experience](https://docs.microsoft.com/en-us/azure/azure-functions/functions-develop-local) or deploy to your Azure subscription with appropriate environment variables set.
