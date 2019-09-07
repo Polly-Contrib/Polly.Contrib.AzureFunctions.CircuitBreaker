@@ -101,9 +101,9 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
                 breakerState.BrokenUntil = DateTime.MinValue;
                 breakerState.CircuitState = CircuitState.Closed;
-
-                context.SetState(breakerState);
             }
+
+            context.SetState(breakerState);
 
             return breakerState.CircuitState;
         }
@@ -125,9 +125,9 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
                 breakerState.CircuitState = CircuitState.Open;
                 breakerState.BrokenUntil = DateTime.UtcNow + breakerState.BreakDuration;
-
-                context.SetState(breakerState);
             }
+
+            context.SetState(breakerState);
 
             return breakerState.CircuitState;
         }
