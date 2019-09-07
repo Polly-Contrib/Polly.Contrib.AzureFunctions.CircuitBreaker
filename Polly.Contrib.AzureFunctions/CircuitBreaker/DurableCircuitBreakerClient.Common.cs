@@ -8,21 +8,21 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
     {
         private const string DurableCircuitBreakerKeyPrefix = "DurableCircuitBreaker-";
 
-        public async Task RecordSuccess(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
+        public async Task RecordSuccess(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording success for circuit-breaker = '{circuitBreakerId}'.");
 
             await orchestrationClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordSuccess);
         }
 
-        public async Task RecordFailure(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
+        public async Task RecordFailure(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording failure for circuit-breaker = '{circuitBreakerId}'.");
 
             await orchestrationClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordFailure);
         }
 
-        public async Task<CircuitState> GetCircuitState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
+        public async Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting circuit state for circuit-breaker = '{circuitBreakerId}'.");
 
@@ -32,7 +32,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             return readState.EntityExists && readState.EntityState != null ? readState.EntityState.CircuitState : CircuitState.Closed;
         }
 
-        public async Task<BreakerState> GetBreakerState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log)
+        public async Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting breaker state for circuit-breaker = '{circuitBreakerId}'.");
 

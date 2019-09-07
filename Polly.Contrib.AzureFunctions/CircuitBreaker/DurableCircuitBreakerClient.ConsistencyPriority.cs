@@ -11,10 +11,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         private const string DefaultConsistencyPriorityCheckCircuitTimeout = "PT2S";
         private const string DefaultConsistencyPriorityCheckCircuitRetryInterval = "PT0.25S";
 
-        public async Task<bool> IsExecutionPermitted_StrongConsistency(
-            IDurableOrchestrationClient orchestrationClient, 
-            string circuitBreakerId,
-            ILogger log)
+        public async Task<bool> IsExecutionPermitted_StrongConsistency(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
         {
             // The circuit-breaker can be configured with a maximum time you are prepared to wait to obtain the current circuit state; this allows you to limit the circuit-breaker itself introducing unwanted excessive latency.
             var checkCircuitConfiguration = GetCheckCircuitConfiguration(circuitBreakerId);
@@ -49,10 +46,10 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             {
                 throw new InvalidOperationException($"{IsExecutionPermittedInternalOrchestratorName}: Could not determine breakerId of circuit-breaker requested.");
             }
-            return await IsExecutionPermitted(context, breakerId, log);
+            return await IsExecutionPermitted(breakerId, log, context);
         }
 
-        public async Task<bool> IsExecutionPermitted(IDurableOrchestrationContext orchestrationContext, string breakerId, ILogger log)
+        public async Task<bool> IsExecutionPermitted(string breakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
             if (string.IsNullOrEmpty(breakerId)) { throw new ArgumentNullException($"{nameof(breakerId)}"); }
 
@@ -61,28 +58,28 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             return await orchestrationContext.CallEntityAsync<bool>(DurableCircuitBreakerEntity.GetEntityId(breakerId), DurableCircuitBreakerEntity.Operation.IsExecutionPermitted);
         }
 
-        public async Task RecordSuccess(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log)
+        public async Task RecordSuccess(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording success for circuit-breaker = '{circuitBreakerId}'.");
 
             await orchestrationContext.CallEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordSuccess);
         }
 
-        public async Task RecordFailure(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log)
+        public async Task RecordFailure(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording failure for circuit-breaker = '{circuitBreakerId}'.");
 
             await orchestrationContext.CallEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordFailure);
         }
 
-        public async Task<CircuitState> GetCircuitState(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log)
+        public async Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting circuit state for circuit-breaker = '{circuitBreakerId}'.");
 
             return await orchestrationContext.CallEntityAsync<CircuitState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.GetCircuitState);
         }
 
-        public async Task<BreakerState> GetBreakerState(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log)
+        public async Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting breaker state for circuit-breaker = '{circuitBreakerId}'.");
 

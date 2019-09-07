@@ -6,26 +6,26 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
     public interface IDurableCircuitBreakerClient
     {
-        Task<bool> IsExecutionPermitted(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<bool> IsExecutionPermitted(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient);
 
-        Task<bool> IsExecutionPermitted_StrongConsistency(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<bool> IsExecutionPermitted_StrongConsistency(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient);
 
-        Task RecordSuccess(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task RecordSuccess(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient);
 
-        Task RecordFailure(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task RecordFailure(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient);
 
-        Task<CircuitState> GetCircuitState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient);
 
-        Task<BreakerState> GetBreakerState(IDurableOrchestrationClient orchestrationClient, string circuitBreakerId, ILogger log);
+        Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient);
 
-        Task<bool> IsExecutionPermitted(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
+        Task<bool> IsExecutionPermitted(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
 
-        Task RecordSuccess(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
+        Task RecordSuccess(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
 
-        Task RecordFailure(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
+        Task RecordFailure(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
 
-        Task<CircuitState> GetCircuitState(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
+        Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
 
-        Task<BreakerState> GetBreakerState(IDurableOrchestrationContext orchestrationContext, string circuitBreakerId, ILogger log);
+        Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
     }
 }

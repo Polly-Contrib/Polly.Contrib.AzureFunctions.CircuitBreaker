@@ -23,10 +23,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             this.serviceProvider = serviceProvider;
         }
 
-        public async Task<bool> IsExecutionPermitted(
-            IDurableOrchestrationClient orchestrationClient, 
-            string circuitBreakerId,
-            ILogger log)
+        public async Task<bool> IsExecutionPermitted(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
         {
             // The performance priority approach reads the circuit-breaker entity state from outside.
             // Per Azure Entity Functions documentation, this may be stale if other operations on the entity have been queued but not yet actioned,
@@ -36,7 +33,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (performance priority) for circuit-breaker = '{circuitBreakerId}'.");
 
-            var breakerState = await GetBreakerStateWithCaching(circuitBreakerId, () => GetBreakerState(orchestrationClient, circuitBreakerId, log));
+            var breakerState = await GetBreakerStateWithCaching(circuitBreakerId, () => GetBreakerState(circuitBreakerId, log, orchestrationClient));
 
             bool isExecutionPermitted;
             if (breakerState == null)

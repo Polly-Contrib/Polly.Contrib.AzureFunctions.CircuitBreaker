@@ -26,7 +26,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult(await durableCircuitBreakerClient.IsExecutionPermitted(orchestrationClient, circuitBreakerId, log));
+            return new OkObjectResult(await durableCircuitBreakerClient.IsExecutionPermitted(circuitBreakerId, log, orchestrationClient));
         }
 
         [FunctionName("GetCircuitState")]
@@ -37,7 +37,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult((await durableCircuitBreakerClient.GetCircuitState(orchestrationClient, circuitBreakerId, log)).ToString());
+            return new OkObjectResult((await durableCircuitBreakerClient.GetCircuitState(circuitBreakerId, log, orchestrationClient)).ToString());
         }
 
         [FunctionName("GetBreakerState")]
@@ -48,7 +48,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult((await durableCircuitBreakerClient.GetBreakerState(orchestrationClient, circuitBreakerId, log)));
+            return new OkObjectResult((await durableCircuitBreakerClient.GetBreakerState(circuitBreakerId, log, orchestrationClient)));
         }
 
         [FunctionName("RecordSuccess")]
@@ -60,7 +60,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            await durableCircuitBreakerClient.RecordSuccess(orchestrationClient, circuitBreakerId, log);
+            await durableCircuitBreakerClient.RecordSuccess(circuitBreakerId, log, orchestrationClient);
             return new OkResult();
         }
 
@@ -73,7 +73,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            await durableCircuitBreakerClient.RecordFailure(orchestrationClient, circuitBreakerId, log);
+            await durableCircuitBreakerClient.RecordFailure(circuitBreakerId, log, orchestrationClient);
             return new OkResult();
         }
 

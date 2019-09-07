@@ -37,7 +37,7 @@ namespace Polly.Contrib.AzureFunctions
             // The trade-off is that a true half-open state (permitting only one execution per breakDuration) cannot be maintained.
             // In half-open state in the performance priority example, any number of executions will be permitted until one succeeds or fails.
 
-            if (!await durableCircuitBreakerClient.IsExecutionPermitted(orchestrationClient, CircuitBreakerId, log))
+            if (!await durableCircuitBreakerClient.IsExecutionPermitted(CircuitBreakerId, log, orchestrationClient))
             {
                 log?.LogError($"{nameof(FooFragileFunctionConsumingBreaker_PerformancePriority)}: Service unavailable.");
 
@@ -48,13 +48,13 @@ namespace Polly.Contrib.AzureFunctions
             {
                 var result = await Foo.DoFragileWork(req, log, "circuit breaker, performance priority");
 
-                await durableCircuitBreakerClient.RecordSuccess(orchestrationClient, CircuitBreakerId, log);
+                await durableCircuitBreakerClient.RecordSuccess(CircuitBreakerId, log, orchestrationClient);
 
                 return result;
             }
             catch (Exception exception)
             {
-                await durableCircuitBreakerClient.RecordFailure(orchestrationClient, CircuitBreakerId, log);
+                await durableCircuitBreakerClient.RecordFailure(CircuitBreakerId, log, orchestrationClient);
 
                 log?.LogError(exception, $"{nameof(FooFragileFunctionConsumingBreaker_PerformancePriority)}: Exception: {exception.Message}");
 
