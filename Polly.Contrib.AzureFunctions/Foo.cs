@@ -23,7 +23,7 @@ namespace Polly.Contrib.AzureFunctions
             await Task.CompletedTask;
 
             var helloWorld = $"Hello world: from inside the function ({context})";
-            log.LogInformation(helloWorld);
+            log?.LogInformation(helloWorld);
 
             return new OkObjectResult(helloWorld);
         }

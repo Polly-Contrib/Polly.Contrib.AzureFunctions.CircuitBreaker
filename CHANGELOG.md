@@ -2,6 +2,7 @@
 
 - Simplify code naming and presentation
 - Add GetBreakerState as a function available via the external API
+- Allow circuit-breaker logging to be optional
 
 ## 1.0.0-preview6
 

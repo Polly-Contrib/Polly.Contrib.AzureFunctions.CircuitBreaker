@@ -66,7 +66,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
                     // The test execution phase is known as HalfOpen state.
                     if (DateTime.UtcNow > breakerState.BrokenUntil)
                     {
-                        log.LogCircuitBreakerMessage(circuitBreakerId, $"Permitting a test execution in half-open state: {circuitBreakerId}.");
+                        log?.LogCircuitBreakerMessage(circuitBreakerId, $"Permitting a test execution in half-open state: {circuitBreakerId}.");
 
                         breakerState.CircuitState = CircuitState.HalfOpen;
                         breakerState.BrokenUntil = DateTime.UtcNow + breakerState.BreakDuration;
@@ -96,7 +96,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             // A success result in HalfOpen state causes the circuit to close (permit executions) again.
             if (IsHalfOpen(breakerState))
             {
-                log.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit re-closing: {circuitBreakerId}.");
+                log?.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit re-closing: {circuitBreakerId}.");
 
                 breakerState.BrokenUntil = DateTime.MinValue;
                 breakerState.CircuitState = CircuitState.Closed;
@@ -120,7 +120,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
                 (breakerState.CircuitState == CircuitState.Closed && breakerState.ConsecutiveFailureCount >= breakerState.MaxConsecutiveFailures) 
                 || IsHalfOpen(breakerState))
             {
-                log.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit {(IsHalfOpen(breakerState) ? "re-opening" : "opening")}: {circuitBreakerId}.");
+                log?.LogCircuitBreakerMessage(circuitBreakerId, $"Circuit {(IsHalfOpen(breakerState) ? "re-opening" : "opening")}: {circuitBreakerId}.");
 
                 breakerState.CircuitState = CircuitState.Open;
                 breakerState.BrokenUntil = DateTime.UtcNow + breakerState.BreakDuration;

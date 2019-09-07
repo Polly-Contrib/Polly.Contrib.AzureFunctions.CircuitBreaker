@@ -37,7 +37,7 @@ namespace Polly.Contrib.AzureFunctions
 
             if (!await durableCircuitBreakerClient.IsExecutionPermitted_StrongConsistency(orchestrationClient, CircuitBreakerId, log))
             {
-                log.LogError($"{nameof(FooFragileFunctionConsumingBreaker_ConsistencyPriority)}: Service unavailable.");
+                log?.LogError($"{nameof(FooFragileFunctionConsumingBreaker_ConsistencyPriority)}: Service unavailable.");
 
                 return new StatusCodeResult((int)HttpStatusCode.ServiceUnavailable);
             }
@@ -54,7 +54,7 @@ namespace Polly.Contrib.AzureFunctions
             {
                 await durableCircuitBreakerClient.RecordFailure(orchestrationClient, CircuitBreakerId, log);
 
-                log.LogError(exception, $"{nameof(FooFragileFunctionConsumingBreaker_ConsistencyPriority)}: Exception: {exception.Message}");
+                log?.LogError(exception, $"{nameof(FooFragileFunctionConsumingBreaker_ConsistencyPriority)}: Exception: {exception.Message}");
 
                 return new InternalServerErrorResult();
             }

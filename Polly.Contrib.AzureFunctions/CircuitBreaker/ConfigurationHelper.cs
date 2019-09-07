@@ -18,7 +18,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         internal static BreakerState ConfigureCircuitBreaker(IDurableEntityContext context, ILogger log)
         {
             string circuitBreakerId = context.Self.EntityKey;
-            log.LogCircuitBreakerMessage(circuitBreakerId, $"Setting configuration for circuit-breaker {circuitBreakerId}.");
+            log?.LogCircuitBreakerMessage(circuitBreakerId, $"Setting configuration for circuit-breaker {circuitBreakerId}.");
 
             // Intentionally no defaults - users should consciously decide what tolerances suit the operations invoked through the circuit-breaker.
             TimeSpan breakDuration = XmlConvert.ToTimeSpan(GetCircuitConfiguration(circuitBreakerId, "BreakDuration"));

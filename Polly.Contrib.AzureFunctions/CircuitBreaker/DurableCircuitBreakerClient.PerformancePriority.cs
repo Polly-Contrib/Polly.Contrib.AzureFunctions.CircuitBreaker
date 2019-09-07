@@ -34,7 +34,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
             // The trade-off is that a true half-open state (permitting only one execution per breakDuration) cannot be maintained.
 
-            log.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (performance priority) for circuit-breaker = '{circuitBreakerId}'.");
+            log?.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (performance priority) for circuit-breaker = '{circuitBreakerId}'.");
 
             var breakerState = await GetBreakerStateWithCaching(circuitBreakerId, () => GetBreakerState(orchestrationClient, circuitBreakerId, log));
 
@@ -62,7 +62,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
                 throw new InvalidOperationException();
             }
 
-            log.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (performance priority) for circuit-breaker = '{circuitBreakerId}' returned: {isExecutionPermitted}.");
+            log?.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (performance priority) for circuit-breaker = '{circuitBreakerId}' returned: {isExecutionPermitted}.");
             return isExecutionPermitted;
         }
 

@@ -30,7 +30,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             switch (status)
             {
                 case OrchestrationRuntimeStatus.Completed:
-                    log.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (consistency priority) for circuit-breaker = '{circuitBreakerId}' returned: {isExecutionPermitted}.");
+                    log?.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (consistency priority) for circuit-breaker = '{circuitBreakerId}' returned: {isExecutionPermitted}.");
                     return isExecutionPermitted.Value;
                 default:
                     OnCircuitStateQueryFailure(status.ToString(), circuitBreakerId, log);
@@ -56,7 +56,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         {
             if (string.IsNullOrEmpty(breakerId)) { throw new ArgumentNullException($"{nameof(breakerId)}"); }
 
-            log.LogCircuitBreakerMessage(breakerId, $"Asking IsExecutionPermitted (consistency priority) for circuit-breaker = '{breakerId}'.");
+            log?.LogCircuitBreakerMessage(breakerId, $"Asking IsExecutionPermitted (consistency priority) for circuit-breaker = '{breakerId}'.");
 
             return await orchestrationContext.CallEntityAsync<bool>(DurableCircuitBreakerEntity.GetEntityId(breakerId), DurableCircuitBreakerEntity.Operation.IsExecutionPermitted);
         }
@@ -110,7 +110,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         {
             // We log any circuit state query failure.
             // Production apps could of course alert (directly here or indirectly by configured alerts) on the circuit-breaker not responding in a timely manner; or choose other options.
-            log.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (consistency priority) for circuit-breaker = '{circuitBreakerId}': {failure}.");
+            log?.LogCircuitBreakerMessage(circuitBreakerId, $"IsExecutionPermitted (consistency priority) for circuit-breaker = '{circuitBreakerId}': {failure}.");
         }
 
         private (TimeSpan timeout, TimeSpan retryInterval) GetCheckCircuitConfiguration(string circuitBreakerId)
