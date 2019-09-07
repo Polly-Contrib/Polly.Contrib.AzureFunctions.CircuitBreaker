@@ -5,6 +5,7 @@
 - Improve parameter order on IDurableCircuitBreakerClient methods
 - Add GetBreakerState as a function available via the external API
 - Allow circuit-breaker logging to be optional
+- Adjust default circuit state cache duration, in performance priority mode
 
 ## 1.0.0-preview6
 

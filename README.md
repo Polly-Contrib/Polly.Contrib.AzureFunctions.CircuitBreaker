@@ -176,7 +176,7 @@ All configuration values are of the form:
 | `LogLevel` | `Microsoft .Extensions .Logging .LogLevel` | The level at which to log circuit events. | `LogLevel .Information` |
 | `ConsistencyPriorityCheckCircuitTimeout` | ISO 8601 duration | In consistency mode, the maximum duration to wait to determine whether an execution should be permitted. (If the circuit state cannot be determined within this timespan, the execution is permitted.) |`PT2S`|
 | `ConsistencyPriorityCheckCircuitRetryInterval` | ISO 8601 duration | In consistency mode, an internal setting determining how often to retry obtaining state (within the above timeout), if it is delayed. |`PT0.25S`|
-| `PerformancePriorityCheckCircuitInterval` | ISO 8601 duration | In priority mode, the state will be memory-cached and not requeried for this period, to prioritise performance |`PT5S`|
+| `PerformancePriorityCheckCircuitInterval` | ISO 8601 duration | In priority mode, the state will be memory-cached and not requeried for this period, to prioritise performance. |`PT2S`|
 
 ## Scoping named circuit-breaker instances
 

@@ -10,7 +10,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
     public partial class DurableCircuitBreakerClient : IDurableCircuitBreakerClient
     {
-        private const string DefaultPerformancePriorityCheckCircuitInterval = "PT5S";
+        private const string DefaultPerformancePriorityCheckCircuitInterval = "PT2S";
 
         private readonly IPolicyRegistry<string> policyRegistry;
         private readonly IServiceProvider serviceProvider;
@@ -74,18 +74,24 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         {
             var key = $"{DurableCircuitBreakerKeyPrefix}{circuitBreakerId}";
 
-            IAsyncPolicy<BreakerState> cachePolicy;
-            if (policyRegistry.TryGet(key, out cachePolicy))
+            if (policyRegistry.TryGet(key, out IAsyncPolicy<BreakerState> cachePolicy))
             {
                 return cachePolicy;
             }
 
             TimeSpan checkCircuitInterval = ConfigurationHelper.GetCircuitConfigurationTimeSpan(circuitBreakerId, "PerformancePriorityCheckCircuitInterval", DefaultPerformancePriorityCheckCircuitInterval);
-            cachePolicy = Policy.CacheAsync<BreakerState>(
-                serviceProvider
-                    .GetRequiredService<IAsyncCacheProvider>()
-                    .AsyncFor<BreakerState>(),
-                checkCircuitInterval);
+            if (checkCircuitInterval > TimeSpan.Zero)
+            {
+                cachePolicy = Policy.CacheAsync<BreakerState>(
+                    serviceProvider
+                        .GetRequiredService<IAsyncCacheProvider>()
+                        .AsyncFor<BreakerState>(),
+                    checkCircuitInterval);
+            }
+            else
+            {
+                cachePolicy = Policy.NoOpAsync<BreakerState>();
+            }
 
             policyRegistry[key] = cachePolicy;
 
