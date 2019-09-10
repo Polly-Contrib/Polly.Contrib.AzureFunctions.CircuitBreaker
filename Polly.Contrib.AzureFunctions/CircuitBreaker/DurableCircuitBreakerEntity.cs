@@ -25,6 +25,10 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [EntityTrigger] IDurableEntityContext context,
             ILogger log)
         {
+            // Note: The Microsoft.Azure.WebJobs.Extensions.DurableTask package as at 2.0.0-beta2 has a new class-based approach
+            // to expressing operations on and property state of entities, and it should be possible to simplify the below code to that approach.
+            // See: https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-preview#net-programing-models for more information.
+
             switch (context.OperationName)
             {
                 case Operation.IsExecutionPermitted:

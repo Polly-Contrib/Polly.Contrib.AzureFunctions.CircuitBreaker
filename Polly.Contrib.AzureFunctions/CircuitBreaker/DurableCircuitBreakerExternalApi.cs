@@ -9,6 +9,15 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 {
     public class DurableCircuitBreakerExternalApi
     {
+        // The purpose of this class is to provide an external, public http/s API to the circuit-breakers.
+
+        // Note: The Microsoft.Azure.WebJobs.Extensions.DurableTask package as at 2.0.0-beta2 offers a new means to
+        // expose a direct REST API to the entities, of a form like:
+        // https://<my-functions-app>/runtime/webhooks/durabletask/entities/DurableCircuitBreaker/{circuitId}?op=OperationName
+        // This should obviate the need for the below explicitly declared extra http-triggered functions in the functions app,
+        // for providing the http/s api.
+
+
         private readonly IDurableCircuitBreakerClient durableCircuitBreakerClient;
 
         public DurableCircuitBreakerExternalApi(

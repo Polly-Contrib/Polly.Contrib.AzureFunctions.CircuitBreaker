@@ -8,11 +8,13 @@ This repo provides a **durable, distributed circuit-breaker**, implemented in Az
 The durable, distributed circuit-breaker can be consumed:
 
 + **within an Azure functions app** - by plain Azure functions or by orchestration functions; 
-+ **from anywhere, over an http/s api**.
++ **from anywhere, over an https api**.
 
 ## How is the Durable Circuit-Breaker implemented?
 
-The implementation uses [Durable Entity functions](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-preview#entity-functions) (in preview at time of writing, September 2019) to persist circuit state durably across invocations and across scaled-out function apps.
+The implementation uses [Durable Entity functions](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-preview#entity-functions) to persist circuit state durably across invocations and across scaled-out function apps.
+
+_Durable Entity Functions are in preview at the time of writing (September 2019) but are (we understand from the functions team) planned to GA before the end of 2019.  The team is also continuously innovating on the entities preview and some details of the implementation here may simplify in that time (see end of readme and codebase), without affecting the overall durable circuit-breaker concept and behaviour._
 
 ## What is the Durable Circuit-Breaker's behaviour?
 
@@ -125,7 +127,9 @@ The method `IsExecutionPermitted_StrongConsistency()` offers the possibility of 
 
 ## How to consume as a durable, distributed circuit-breaker from any location, over https
 
-The example durable circuit-breaker code exposes an Https api for consuming the circuit-breaker.  By default, the operations are exposed on the below endpoints:
+The example durable circuit-breaker code exposes an http/s api for consuming the circuit-breaker.  By default, the operations are exposed on the below endpoints:
+
+_Note: The Microsoft Functions team is continuously innovating on the durable functions entities preview. The precise API paths may change for GA, but we can expect the concept of addressing the circuit-breaker entity over endpoints such as below to remain the same._
 
 | Endpoint | Http verb | Operation | Example return value |
 | --- | --- | --- | --- | 
@@ -246,9 +250,11 @@ In a production app you might choose to organise your logging differently.
 
 The implementation intentionally makes lightweight use of Entity Functions features, using a single Entity Function to maintain state and a low number of calls and signals to or between entities.  
 
-## Status
+## Status and future changes
 
-At time of writing, the Durable Distributed Circuit Breaker is provided as a proof-of-concept, starter pattern for users to trial and adapt into their own Azure functions apps.
+At time of writing, the Durable Distributed Circuit Breaker is provided as a proof-of-concept, starter pattern for users to trial for adaptation into their own Azure functions apps.
+
+The Microsoft Functions team is continuously innovating on the Durable Functions Entities preview and we can expect some items of this code to simplify (notes are within the code) as Durable Functions Entities come towards GA.  However, these are mostly entities API changes under the hood - from the perspective of the distributed circuit-breaker, the concepts can be expected to remain the same and be stable.
 
 ## License
 
