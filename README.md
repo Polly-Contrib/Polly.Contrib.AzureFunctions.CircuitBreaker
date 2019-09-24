@@ -259,3 +259,18 @@ The Microsoft Functions team is continuously innovating on the Durable Functions
 ## License
 
 Polly.Contrib.AzureFunctions.CircuitBreaker is licensed under the [BSD 3-clause license](https://github.com/Polly-Contrib/Polly.Contrib.AzureFunctions.CircuitBreaker/blob/master/LICENSE).
+
+## Comparable projects
+
+Jeff Hollan (Principal PM Mgr for Microsoft Azure Functions) has also released https://github.com/jeffhollan/functions-durable-actor-circuitbreaker, which demonstrates another variant on the circuit-breaker pattern in Azure Functions.  
+
+The project differs from the one here in that:
+
++ it records failures over a time window
++ when the circuit breaks, it is pre-coded to fire an event which will disable a Function App.
+
+This concept can be useful if the function app being governed hosts a queue-triggered function. With a function processing queue messages, when some downstream component required for processing is unavailable (indicated by the circuit-breaking), you want to avoid receiving messages into the function at all - to avoid receiving messages and having to reject them, leading eventually to dead-lettered messages.  
+
+The pattern would need to be augmented by a further process (for example a separate timer-triggered function or time-delaying orchestrator function) which re-closes the circuit (permits executions) after a given period of time.  For further discussion of these issues, [see here](https://github.com/App-vNext/Polly/issues/287#issuecomment-527767742).
+
+A similar pattern (placing a call to disable a function app) could be adapted onto Polly.Contrib.AzureFunctions.CircuitBreaker, by extending the [code which breaks the circuit, here](https://github.com/Polly-Contrib/Polly.Contrib.AzureFunctions.CircuitBreaker/blob/5770a0c628041707cfd946fa9b367c814f4aadd6/Polly.Contrib.AzureFunctions/CircuitBreaker/DurableCircuitBreakerEntity.cs#L128-L136).
