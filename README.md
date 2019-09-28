@@ -256,6 +256,10 @@ At time of writing, the Durable Distributed Circuit Breaker is provided as a pro
 
 The Microsoft Functions team is continuously innovating on the Durable Functions Entities preview and we can expect some items of this code to simplify (notes are within the code) as Durable Functions Entities come towards GA.  However, these are mostly entities API changes under the hood - from the perspective of the distributed circuit-breaker, the concepts can be expected to remain the same and be stable.
 
+## Credits
+
+Polly.Contrib.AzureFunctions.CircuitBreaker was built by [@reisenberger](https://github.com/reisenberger).
+
 ## License
 
 Polly.Contrib.AzureFunctions.CircuitBreaker is licensed under the [BSD 3-clause license](https://github.com/Polly-Contrib/Polly.Contrib.AzureFunctions.CircuitBreaker/blob/master/LICENSE).
