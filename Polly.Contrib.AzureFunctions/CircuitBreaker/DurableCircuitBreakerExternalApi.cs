@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 
@@ -32,10 +33,10 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             // GET http method left accessible for easy demonstration from a browser. Conceptually, even IsExecutionPermitted may change circuit state (to Half-Open), so might be considered POST-only.
             string circuitBreakerId,
             ILogger log,
-            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
+            [DurableClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult(await durableCircuitBreakerClient.IsExecutionPermitted(circuitBreakerId, log, orchestrationClient));
+            return new OkObjectResult(await durableCircuitBreakerClient.IsExecutionPermitted(circuitBreakerId, log, (IDurableClient) (IDurableEntityClient) orchestrationClient));
         }
 
         [FunctionName("GetCircuitState")]
@@ -43,10 +44,10 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "DurableCircuitBreaker/{circuitBreakerId:alpha}/GetCircuitState")]  HttpRequestMessage req,
             string circuitBreakerId,
             ILogger log,
-            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
+            [DurableClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult((await durableCircuitBreakerClient.GetCircuitState(circuitBreakerId, log, orchestrationClient)).ToString());
+            return new OkObjectResult((await durableCircuitBreakerClient.GetCircuitState(circuitBreakerId, log, (IDurableClient) (IDurableEntityClient) orchestrationClient)).ToString());
         }
 
         [FunctionName("GetBreakerState")]
@@ -54,10 +55,10 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "DurableCircuitBreaker/{circuitBreakerId:alpha}/GetBreakerState")]  HttpRequestMessage req,
             string circuitBreakerId,
             ILogger log,
-            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
+            [DurableClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            return new OkObjectResult((await durableCircuitBreakerClient.GetBreakerState(circuitBreakerId, log, orchestrationClient)));
+            return new OkObjectResult((await durableCircuitBreakerClient.GetBreakerState(circuitBreakerId, log, (IDurableClient) (IDurableEntityClient) orchestrationClient)));
         }
 
         [FunctionName("RecordSuccess")]
@@ -66,10 +67,10 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             // GET http method left accessible for easy demonstration from a browser. Conceptually, it should be only a POST operation, as it amends circuit statistics and potentially state.
             string circuitBreakerId,
             ILogger log,
-            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
+            [DurableClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            await durableCircuitBreakerClient.RecordSuccess(circuitBreakerId, log, orchestrationClient);
+            await durableCircuitBreakerClient.RecordSuccess(circuitBreakerId, log, (IDurableClient) (IDurableEntityClient) orchestrationClient);
             return new OkResult();
         }
 
@@ -79,10 +80,10 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             // GET http method left accessible for easy demonstration from a browser. Conceptually, it should be only a POST operation, as it amends circuit statistics and potentially state.
             string circuitBreakerId,
             ILogger log,
-            [OrchestrationClient]IDurableOrchestrationClient orchestrationClient
+            [DurableClient]IDurableOrchestrationClient orchestrationClient
         )
         {
-            await durableCircuitBreakerClient.RecordFailure(circuitBreakerId, log, orchestrationClient);
+            await durableCircuitBreakerClient.RecordFailure(circuitBreakerId, log, (IDurableClient) (IDurableEntityClient) orchestrationClient);
             return new OkResult();
         }
 
