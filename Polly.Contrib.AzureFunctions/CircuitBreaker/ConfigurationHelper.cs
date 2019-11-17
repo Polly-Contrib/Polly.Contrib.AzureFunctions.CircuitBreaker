@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Xml;
-using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 

@@ -31,7 +31,7 @@ namespace Polly.Contrib.AzureFunctions
             [DurableClient]IDurableOrchestrationClient orchestrationClient
             )
         {
-            if (!await durableCircuitBreakerClient.IsExecutionPermitted((string) (string) CircuitBreakerId, log, (IDurableClient) (IDurableEntityClient) orchestrationClient))
+            if (!await durableCircuitBreakerClient.IsExecutionPermitted(CircuitBreakerId, log, (IDurableClient) orchestrationClient))
             {
                 log?.LogError($"{nameof(FooFragileFunction_WithCircuitBreaker)}: Service unavailable.");
 
@@ -42,13 +42,13 @@ namespace Polly.Contrib.AzureFunctions
             {
                 var result = await Foo.DoFragileWork(req, log, "circuit breaker, performance priority");
 
-                await durableCircuitBreakerClient.RecordSuccess((string) (string) CircuitBreakerId, log, (IDurableClient) (IDurableEntityClient) orchestrationClient);
+                await durableCircuitBreakerClient.RecordSuccess(CircuitBreakerId, log, (IDurableClient) orchestrationClient);
 
                 return result;
             }
             catch (Exception exception)
             {
-                await durableCircuitBreakerClient.RecordFailure((string) (string) CircuitBreakerId, log, (IDurableClient) (IDurableEntityClient) orchestrationClient);
+                await durableCircuitBreakerClient.RecordFailure(CircuitBreakerId, log, (IDurableClient) orchestrationClient);
 
                 log?.LogError(exception, $"{nameof(FooFragileFunction_WithCircuitBreaker)}: Exception: {exception.Message}");
 
