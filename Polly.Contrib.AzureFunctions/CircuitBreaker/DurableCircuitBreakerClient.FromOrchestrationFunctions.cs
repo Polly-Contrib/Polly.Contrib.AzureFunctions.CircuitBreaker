@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 
 namespace Polly.Contrib.AzureFunctions.CircuitBreaker
@@ -11,7 +12,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         private const string DefaultConsistencyPriorityCheckCircuitTimeout = "PT2S";
         private const string DefaultConsistencyPriorityCheckCircuitRetryInterval = "PT0.25S";
 
-        public async Task<bool> IsExecutionPermitted_StrongConsistency(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
+        public async Task<bool> IsExecutionPermitted_StrongConsistency(string circuitBreakerId, ILogger log, IDurableClient orchestrationClient)
         {
             // The circuit-breaker can be configured with a maximum time you are prepared to wait to obtain the current circuit state; this allows you to limit the circuit-breaker itself introducing unwanted excessive latency.
             var checkCircuitConfiguration = GetCheckCircuitConfiguration(circuitBreakerId);

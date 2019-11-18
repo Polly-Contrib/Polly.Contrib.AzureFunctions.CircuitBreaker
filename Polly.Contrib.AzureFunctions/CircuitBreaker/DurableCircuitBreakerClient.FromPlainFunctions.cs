@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Polly.Caching;
@@ -25,7 +25,8 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             this.serviceProvider = serviceProvider;
         }
 
-        public async Task<bool> IsExecutionPermitted(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
+        public async Task<bool> IsExecutionPermitted(string circuitBreakerId, ILogger log,
+            IDurableClient durableClient)
         {
             // The performance priority approach reads the circuit-breaker entity state from outside.
             // Per Azure Entity Functions documentation, this may be stale if other operations on the entity have been queued but not yet actioned,
@@ -35,7 +36,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (performance priority) for circuit-breaker = '{circuitBreakerId}'.");
 
-            var breakerState = await GetBreakerStateWithCaching(circuitBreakerId, () => GetBreakerState(circuitBreakerId, log, orchestrationClient));
+            var breakerState = await GetBreakerStateWithCaching(circuitBreakerId, () => GetBreakerState(circuitBreakerId, log, durableClient));
 
             bool isExecutionPermitted;
             if (breakerState == null)
@@ -65,35 +66,37 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             return isExecutionPermitted;
         }
 
-        public async Task RecordSuccess(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
+        public async Task RecordSuccess(string circuitBreakerId, ILogger log, IDurableClient durableClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording success for circuit-breaker = '{circuitBreakerId}'.");
 
-            await orchestrationClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordSuccess);
+            await durableClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordSuccess);
         }
 
-        public async Task RecordFailure(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
+        public async Task RecordFailure(string circuitBreakerId, ILogger log, IDurableClient durableClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording failure for circuit-breaker = '{circuitBreakerId}'.");
 
-            await orchestrationClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordFailure);
+            await durableClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordFailure);
         }
 
-        public async Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
+        public async Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log,
+            IDurableClient durableClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting circuit state for circuit-breaker = '{circuitBreakerId}'.");
 
-            var readState = await orchestrationClient.ReadEntityStateAsync<BreakerState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId));
+            var readState = await durableClient.ReadEntityStateAsync<BreakerState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId));
 
             // To keep the return type simple, we present a not-yet-initialized circuit-breaker as closed (it will be closed when first used).
             return readState.EntityExists && readState.EntityState != null ? readState.EntityState.CircuitState : CircuitState.Closed;
         }
 
-        public async Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log, IDurableOrchestrationClient orchestrationClient)
+        public async Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log,
+            IDurableClient durableClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting breaker state for circuit-breaker = '{circuitBreakerId}'.");
 
-            var readState = await orchestrationClient.ReadEntityStateAsync<BreakerState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId));
+            var readState = await durableClient.ReadEntityStateAsync<BreakerState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId));
 
             // We present a not-yet-initialized circuit-breaker as null (it will be initialized when successes or failures are first posted against it).
             return readState.EntityExists && readState.EntityState != null ? readState.EntityState : null;

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Xml;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 
 namespace Polly.Contrib.AzureFunctions.CircuitBreaker
@@ -17,7 +17,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
         internal static BreakerState ConfigureCircuitBreaker(IDurableEntityContext context, ILogger log)
         {
-            string circuitBreakerId = context.Self.EntityKey;
+            string circuitBreakerId = context.EntityKey;
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Setting configuration for circuit-breaker {circuitBreakerId}.");
 
             // Intentionally no defaults - users should consciously decide what tolerances suit the operations invoked through the circuit-breaker.

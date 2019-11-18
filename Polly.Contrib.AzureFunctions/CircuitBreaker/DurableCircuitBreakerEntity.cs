@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 
 namespace Polly.Contrib.AzureFunctions.CircuitBreaker
@@ -60,7 +61,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         
         private static bool IsExecutionPermitted(IDurableEntityContext context, ILogger log)
         {
-            string circuitBreakerId = context.Self.EntityKey;
+            string circuitBreakerId = context.EntityKey;
             var breakerState = GetBreakerState(context, log);
 
             switch (breakerState.CircuitState)
@@ -97,7 +98,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
         private static CircuitState RecordSuccess(IDurableEntityContext context, ILogger log)
         {
-            string circuitBreakerId = context.Self.EntityKey;
+            string circuitBreakerId = context.EntityKey;
             var breakerState = GetBreakerState(context, log);
 
             breakerState.ConsecutiveFailureCount = 0;
@@ -118,7 +119,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
         private static CircuitState RecordFailure(IDurableEntityContext context, ILogger log)
         {
-            string circuitBreakerId = context.Self.EntityKey;
+            string circuitBreakerId = context.EntityKey;
             var breakerState = GetBreakerState(context, log);
 
             breakerState.ConsecutiveFailureCount++;
