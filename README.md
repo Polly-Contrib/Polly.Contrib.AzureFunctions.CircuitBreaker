@@ -12,9 +12,9 @@ The durable, distributed circuit-breaker can be consumed:
 
 ## How is the Durable Circuit-Breaker implemented?
 
-The implementation uses [Durable Entity functions](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-preview#entity-functions) to persist circuit state durably across invocations and across scaled-out function apps.
+The implementation uses [Durable Entity functions](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-entities) to persist circuit state durably across invocations and across scaled-out function apps.
 
-_Durable Entity Functions are in preview at the time of writing (September 2019) but are (we understand from the functions team) planned to GA before the end of 2019.  The team is also continuously innovating on the entities preview and some details of the implementation here may simplify in that time (see end of readme and codebase), without affecting the overall durable circuit-breaker concept and behaviour._
+_Durable Entity Functions went GA in early November 2019.  This implementation was written at the time of the preview, and does not yet utilize some innovations made between preview and general availability. Some details of the implementation here can simplify (see readme and codebase), without affecting the overall durable circuit-breaker concept and behaviour._
 
 ## What is the Durable Circuit-Breaker's behaviour?
 
@@ -129,7 +129,7 @@ The method `IsExecutionPermitted_StrongConsistency()` offers the possibility of 
 
 The example durable circuit-breaker code exposes an http/s api for consuming the circuit-breaker.  By default, the operations are exposed on the below endpoints:
 
-_Note: The Microsoft Functions team is continuously innovating on the durable functions entities preview. The precise API paths may change for GA, but we can expect the concept of addressing the circuit-breaker entity over endpoints such as below to remain the same._
+_Note: The Microsoft Functions team innovated on the durable functions entities preview and the GA now provides [direct access methods for entities](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-dotnet-entities#accessing-entities-directly). The implementation here can be updated to these new patterns; but the concept of addressing the circuit-breaker entity over endpoints such as below will remain the same._
 
 | Endpoint | Http verb | Operation | Example return value |
 | --- | --- | --- | --- | 
