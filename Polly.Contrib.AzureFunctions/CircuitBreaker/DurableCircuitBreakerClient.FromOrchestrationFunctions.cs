@@ -40,51 +40,51 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         private const string IsExecutionPermittedInternalOrchestratorName = "IsExecutionPermittedInternalOrchestratorName";
 
         [FunctionName(IsExecutionPermittedInternalOrchestratorName)]
-        public async Task<bool> IsExecutionPermittedInternalOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
+        public Task<bool> IsExecutionPermittedInternalOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context, ILogger log)
         {
             string breakerId = context.GetInput<string>();
             if (string.IsNullOrEmpty(breakerId))
             {
                 throw new InvalidOperationException($"{IsExecutionPermittedInternalOrchestratorName}: Could not determine breakerId of circuit-breaker requested.");
             }
-            return await IsExecutionPermitted(breakerId, log, context);
+            return IsExecutionPermitted(breakerId, log, context);
         }
 
-        public async Task<bool> IsExecutionPermitted(string breakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
+        public async Task<bool> IsExecutionPermitted(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
-            if (string.IsNullOrEmpty(breakerId)) { throw new ArgumentNullException($"{nameof(breakerId)}"); }
+            if (string.IsNullOrEmpty(circuitBreakerId)) { throw new ArgumentNullException($"{nameof(circuitBreakerId)}"); }
 
-            log?.LogCircuitBreakerMessage(breakerId, $"Asking IsExecutionPermitted (consistency priority) for circuit-breaker = '{breakerId}'.");
+            log?.LogCircuitBreakerMessage(circuitBreakerId, $"Asking IsExecutionPermitted (consistency priority) for circuit-breaker = '{circuitBreakerId}'.");
 
-            return await orchestrationContext.CallEntityAsync<bool>(DurableCircuitBreakerEntity.GetEntityId(breakerId), DurableCircuitBreakerEntity.Operation.IsExecutionPermitted);
+            return await orchestrationContext.CreateEntityProxy<IDurableCircuitBreaker>(circuitBreakerId).IsExecutionPermitted();
         }
 
         public async Task RecordSuccess(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording success for circuit-breaker = '{circuitBreakerId}'.");
 
-            await orchestrationContext.CallEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordSuccess);
+            await orchestrationContext.CreateEntityProxy<IDurableCircuitBreaker>(circuitBreakerId).RecordSuccess();
         }
 
         public async Task RecordFailure(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording failure for circuit-breaker = '{circuitBreakerId}'.");
 
-            await orchestrationContext.CallEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordFailure);
+            await orchestrationContext.CreateEntityProxy<IDurableCircuitBreaker>(circuitBreakerId).RecordFailure();
         }
 
         public async Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting circuit state for circuit-breaker = '{circuitBreakerId}'.");
 
-            return await orchestrationContext.CallEntityAsync<CircuitState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.GetCircuitState);
+            return await orchestrationContext.CreateEntityProxy<IDurableCircuitBreaker>(circuitBreakerId).GetCircuitState();
         }
 
-        public async Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
+        public async Task<DurableCircuitBreaker> GetBreakerState(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting breaker state for circuit-breaker = '{circuitBreakerId}'.");
 
-            return await orchestrationContext.CallEntityAsync<BreakerState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.GetBreakerState);
+            return await orchestrationContext.CreateEntityProxy<IDurableCircuitBreaker>(circuitBreakerId).GetBreakerState();
         }
 
         private async Task<(bool?, OrchestrationRuntimeStatus)> WaitForCompletionOrTimeout(

@@ -12,19 +12,19 @@ using Polly.Contrib.AzureFunctions.CircuitBreaker;
 
 namespace Polly.Contrib.AzureFunctions
 {
-    public class FooFragileFunction_WithCircuitBreaker
+    public class FooFragileFunctionWithCircuitBreaker
     {
         // Uniquely identifies the circuit-breaker instance guarding this operation.
-        private const string CircuitBreakerId = nameof(FooFragileFunction_WithCircuitBreaker);
+        private const string CircuitBreakerId = nameof(FooFragileFunctionWithCircuitBreaker);
 
         private readonly IDurableCircuitBreakerClient durableCircuitBreakerClient;
 
-        public FooFragileFunction_WithCircuitBreaker(IDurableCircuitBreakerClient durableCircuitBreakerClient)
+        public FooFragileFunctionWithCircuitBreaker(IDurableCircuitBreakerClient durableCircuitBreakerClient)
         {
             this.durableCircuitBreakerClient = durableCircuitBreakerClient;
         }
 
-        [FunctionName("FooFragileFunction_WithCircuitBreaker")]
+        [FunctionName("FooFragileFunctionWithCircuitBreaker")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestMessage req,
             ILogger log,
@@ -33,7 +33,7 @@ namespace Polly.Contrib.AzureFunctions
         {
             if (!await durableCircuitBreakerClient.IsExecutionPermitted(CircuitBreakerId, log, (IDurableClient) orchestrationClient))
             {
-                log?.LogError($"{nameof(FooFragileFunction_WithCircuitBreaker)}: Service unavailable.");
+                log?.LogError($"{nameof(FooFragileFunctionWithCircuitBreaker)}: Service unavailable.");
 
                 return new StatusCodeResult((int)HttpStatusCode.ServiceUnavailable);
             }
@@ -50,7 +50,7 @@ namespace Polly.Contrib.AzureFunctions
             {
                 await durableCircuitBreakerClient.RecordFailure(CircuitBreakerId, log, (IDurableClient) orchestrationClient);
 
-                log?.LogError(exception, $"{nameof(FooFragileFunction_WithCircuitBreaker)}: Exception: {exception.Message}");
+                log?.LogError(exception, $"{nameof(FooFragileFunctionWithCircuitBreaker)}: Exception: {exception.Message}");
 
                 return new InternalServerErrorResult();
             }

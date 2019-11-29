@@ -8,9 +8,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Polly.Contrib.AzureFunctions
 {
-    public class FooFragileFunction_NoCircuitBreaker
+    public class FooFragileFunctionNoCircuitBreaker
     {
-        [FunctionName("FooFragileFunction_NoCircuitBreaker")]
+        [FunctionName("FooFragileFunctionNoCircuitBreaker")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestMessage req,
             ILogger log,

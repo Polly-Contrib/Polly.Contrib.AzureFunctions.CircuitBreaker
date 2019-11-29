@@ -12,17 +12,19 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
     {
         // The purpose of this class is to provide an external, public http/s API to the circuit-breakers.
 
-        // Note: The Microsoft.Azure.WebJobs.Extensions.DurableTask package as at 2.0.0-beta2 offers a new means to
-        // expose a direct REST API to the entities, of a form like:
+        // Note: The GA of Durable Functions v2.0.0 also exposes a direct REST API to the entities, of a form:
         // https://<my-functions-app>/runtime/webhooks/durabletask/entities/DurableCircuitBreaker/{circuitId}?op=OperationName
-        // This should obviate the need for the below explicitly declared extra http-triggered functions in the functions app,
-        // for providing the http/s api.
+        // More detail at: https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-http-api#signal-entity 
+        // This could be used as an alternative for some operations we have exposed here.
+
+        // This projects retains its own custom HTTP API because IsExecutionPermitted requires POSTing to an entity and getting a response (ie calling an entity):
+        // That calling mode does not appear to be supported by either of the MS APIs  https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-http-api#signal-entity or https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-http-api#query-entity
+
 
 
         private readonly IDurableCircuitBreakerClient durableCircuitBreakerClient;
 
-        public DurableCircuitBreakerExternalApi(
-            IDurableCircuitBreakerClient durableCircuitBreakerClient)
+        public DurableCircuitBreakerExternalApi(IDurableCircuitBreakerClient durableCircuitBreakerClient)
         {
             this.durableCircuitBreakerClient = durableCircuitBreakerClient;
         }
@@ -58,7 +60,7 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             [DurableClient]IDurableClient durableClient
         )
         {
-            return new OkObjectResult((await durableCircuitBreakerClient.GetBreakerState(circuitBreakerId, log, durableClient)));
+            return new OkObjectResult(await durableCircuitBreakerClient.GetBreakerState(circuitBreakerId, log, durableClient));
         }
 
         [FunctionName("RecordSuccess")]

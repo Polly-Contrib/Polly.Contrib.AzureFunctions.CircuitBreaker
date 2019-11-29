@@ -14,7 +14,7 @@ The durable, distributed circuit-breaker can be consumed:
 
 The implementation uses [Durable Entity functions](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-entities) to persist circuit state durably across invocations and across scaled-out function apps.
 
-_Durable Entity Functions went GA in early November 2019.  This implementation was written at the time of the preview, and does not yet utilize some innovations made between preview and general availability. Some details of the implementation here can simplify (see readme and codebase), without affecting the overall durable circuit-breaker concept and behaviour._
+_Durable Entity Functions are available in Durable Functions 2.0 and above._
 
 ## What is the Durable Circuit-Breaker's behaviour?
 
@@ -53,11 +53,11 @@ The code provides an interface `IDurableCircuitBreakerClient` defining five asyc
 
 Take an instance of `IDurableCircuitBreakerClient circuitBreakerClient` by dependency-injection into your function.
 
-The interface methods exist in forms taking an `IDurableOrchestrationClient` (for use in plain Azure functions), and in forms taking an `IDurableOrchestrationContext` (for use in Azure Orchestrator functions).
+The interface methods exist in forms taking an `IDurableClient` (for use in plain Azure functions), and in forms taking an `IDurableOrchestrationContext` (for use in Azure Orchestrator functions).
 
 ### How to call the circuit-breaker to protect an operation which may fail
 
-A standard pattern is as below. See `FooFragileFunction_WithCircuitBreaker` in the solution for an example.
+A standard pattern is as below. See `FooFragileFunctionWithCircuitBreaker` in the solution for an example.
 
     if (!(await circuitBreakerClient.IsExecutionPermitted(CircuitBreakerId, log, orchestrationClient)))
     {
@@ -84,7 +84,7 @@ Of course, you can extend this pattern to filter on specific exceptions; or trea
 ### Demo: Using the circuit-breaker in an Azure function
 
 + Start the functions app locally [using the Azure Functions Core Tools local development experience](https://docs.microsoft.com/en-us/azure/azure-functions/functions-develop-local), or deploy to your Azure subscription and set environment variables similar to the choices in `local.settings.json`.
-+ Hit the endpoint configured in your function app for `FooFragileFunction_WithCircuitBreaker`, repeatedly.
++ Hit the endpoint configured in your function app for `FooFragileFunctionWithCircuitBreaker`, repeatedly.
   - The endpoint simulates an operation failing 50% of the time.
   - The sample is configured to break the circuit for 10 seconds when 2 consecutive failures have occurred.
 
@@ -118,7 +118,7 @@ This provides behaviour matching the classic circuit-breaker pattern described i
 
 For the circuit-breaker **plain** Azure functions API, the behaviour changes in the following ways, to prioritize performance:
 
-- There is a weaker guarantee in half-open state. The half-open state permits multiple test executions (if requests arrive concurrently) until the first result is received. The first success or failure recorded in half-open state will cause the circuit to transition from half-open to closed or open again.
+- There is a weaker guarantee in half-open state. The half-open state permits multiple concurrent test executions (if requests arrive concurrently) until the first result is received. The first success or failure recorded in half-open state will cause the circuit to transition from half-open to closed or open again.
 - It is theoretically possible for the circuit-state to be fractionally stale if requests to record preceding success/fail executions have not executed against the entity by the time another execution reads circuit state.  This fractional staleness (aka weaker consistency guarantee) is not considered significant for the circuit-breaker use case, which is in any case an approximation over the health of the underlying system, in comparison to the performance gain.
 
 #### What is the method `IsExecutionPermitted_StrongConsistency()` found on `IDurableCircuitBreakerClient`?
@@ -128,8 +128,6 @@ The method `IsExecutionPermitted_StrongConsistency()` offers the possibility of 
 ## How to consume as a durable, distributed circuit-breaker from any location, over https
 
 The example durable circuit-breaker code exposes an http/s api for consuming the circuit-breaker.  By default, the operations are exposed on the below endpoints:
-
-_Note: The Microsoft Functions team innovated on the durable functions entities preview and the GA now provides [direct access methods for entities](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-dotnet-entities#accessing-entities-directly). The implementation here can be updated to these new patterns; but the concept of addressing the circuit-breaker entity over endpoints such as below will remain the same._
 
 | Endpoint | Http verb | Operation | Example return value |
 | --- | --- | --- | --- | 
@@ -168,6 +166,8 @@ _(example intentionally in pseudo-code, not C#, as you may consume the distribut
 In .NET Core, the most obvious way to implement this would be to use HttpClientFactory to define an `HttpClient` with BaseUri and authorization pre-configured for placing the calls to the distributed circuit-breaker functions.
 
 The `GetCircuitState` and `GetBreakerState` endpoints are provided for information and are not required to be used to operate the circuit-breaker.
+
+_Note: Azure Durable Functions also exposes an [HTTPS api for entities](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-http-api#signal-entity), which could equivalently be used for_ **some** _of the above functions. It exposes APIs for signalling and querying entities, but does not expose a direct API for calling operations on entities and getting a response - which IsExecutionPermitted requires. We have therefore exposed all circuit-breaker functions on a custom API for consistency._
 
 ### Demo: Consuming as a distributed circuit-breaker over http
 
@@ -244,7 +244,7 @@ In a production app you might choose to organise your logging differently.
 |`I/DurableCircuitBreakerClient`|interfaces to Azure functions tooling|Defines methods for querying and invoking actions on the circuit entity|
 |`DurableCircuitBreakerExternalApi`|http-triggered functions|an external API for consuming the durable circuit-breaker from anywhere, over http|
 |`local.settings.json`|configuration environment variables|demonstrates configuration for circuit-breaker instances|
-|`FooFragileFunction_*`|Standard http-triggered function|demonstrates a standard Azure function executing its work through the circuit-breaker|
+|`FooFragileFunction*`|Standard http-triggered function|demonstrates a standard Azure function executing its work through the circuit-breaker|
 
 ### Characteristics
 

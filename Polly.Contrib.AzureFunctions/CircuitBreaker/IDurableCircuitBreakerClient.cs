@@ -17,19 +17,16 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
 
         Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log, IDurableClient durableClient);
 
-        Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log, IDurableClient durableClient);
+        Task<DurableCircuitBreaker> GetBreakerState(string circuitBreakerId, ILogger log, IDurableClient durableClient);
 
-        Task<bool> IsExecutionPermitted(string circuitBreakerId, ILogger log,
-            IDurableOrchestrationContext orchestrationContext);
+        Task<bool> IsExecutionPermitted(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
 
         Task RecordSuccess(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
 
         Task RecordFailure(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
 
-        Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log,
-            IDurableOrchestrationContext orchestrationContext);
+        Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
 
-        Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log,
-            IDurableOrchestrationContext orchestrationContext);
+        Task<DurableCircuitBreaker> GetBreakerState(string circuitBreakerId, ILogger log, IDurableOrchestrationContext orchestrationContext);
     }
 }
