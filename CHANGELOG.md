@@ -1,6 +1,14 @@
-## 1.0.0-rc1
+## 1.0.0-rc3 (December 27, 2019)
 
-- Use a single demonstration `FooFragileFunction_WithCircuitBreaker`
+- Use v2.0 GA features
+
+## 1.0.0-rc2 (November 18, 2019)
+
+- Update to Microsoft.Azure.WebJobs.Extensions.DurableTask v2.0 GA
+
+## 1.0.0-rc1 (September 10, 2019)
+
+- Use a single demonstration `FooFragileFunctionWithCircuitBreaker`
 
 ## 1.0.0-preview7
 

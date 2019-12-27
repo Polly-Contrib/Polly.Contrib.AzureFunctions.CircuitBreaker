@@ -70,50 +70,53 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording success for circuit-breaker = '{circuitBreakerId}'.");
 
-            await durableClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordSuccess);
+            await durableClient.SignalEntityAsync<IDurableCircuitBreaker>(circuitBreakerId, breaker => breaker.RecordSuccess());
         }
 
         public async Task RecordFailure(string circuitBreakerId, ILogger log, IDurableClient durableClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Recording failure for circuit-breaker = '{circuitBreakerId}'.");
 
-            await durableClient.SignalEntityAsync(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId), DurableCircuitBreakerEntity.Operation.RecordFailure);
+            await durableClient.SignalEntityAsync<IDurableCircuitBreaker>(circuitBreakerId, breaker => breaker.RecordFailure());
         }
 
-        public async Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log,
-            IDurableClient durableClient)
+        public async Task<CircuitState> GetCircuitState(string circuitBreakerId, ILogger log, IDurableClient durableClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting circuit state for circuit-breaker = '{circuitBreakerId}'.");
 
-            var readState = await durableClient.ReadEntityStateAsync<BreakerState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId));
+            var readState = await durableClient.ReadEntityStateAsync<DurableCircuitBreaker>(DurableCircuitBreaker.GetEntityId(circuitBreakerId));
 
             // To keep the return type simple, we present a not-yet-initialized circuit-breaker as closed (it will be closed when first used).
             return readState.EntityExists && readState.EntityState != null ? readState.EntityState.CircuitState : CircuitState.Closed;
         }
 
-        public async Task<BreakerState> GetBreakerState(string circuitBreakerId, ILogger log,
-            IDurableClient durableClient)
+        public async Task<DurableCircuitBreaker> GetBreakerState(string circuitBreakerId, ILogger log, IDurableClient durableClient)
         {
             log?.LogCircuitBreakerMessage(circuitBreakerId, $"Getting breaker state for circuit-breaker = '{circuitBreakerId}'.");
 
-            var readState = await durableClient.ReadEntityStateAsync<BreakerState>(DurableCircuitBreakerEntity.GetEntityId(circuitBreakerId));
+            var readState = await durableClient.ReadEntityStateAsync<DurableCircuitBreaker>(DurableCircuitBreaker.GetEntityId(circuitBreakerId));
 
             // We present a not-yet-initialized circuit-breaker as null (it will be initialized when successes or failures are first posted against it).
-            return readState.EntityExists && readState.EntityState != null ? readState.EntityState : null;
+            if (!readState.EntityExists || readState.EntityState == null)
+            {
+                return null;
+            }
+
+            return readState.EntityState;
         }
 
-        private async Task<BreakerState> GetBreakerStateWithCaching(string circuitBreakerId, Func<Task<BreakerState>> getBreakerState)
+        private async Task<DurableCircuitBreaker> GetBreakerStateWithCaching(string circuitBreakerId, Func<Task<DurableCircuitBreaker>> getBreakerState)
         {
             var cachePolicy = GetCachePolicy(circuitBreakerId);
             var context = new Context($"{DurableCircuitBreakerKeyPrefix}{circuitBreakerId}");
             return await cachePolicy.ExecuteAsync(ctx => getBreakerState(), context);
         }
 
-        private IAsyncPolicy<BreakerState> GetCachePolicy(string circuitBreakerId)
+        private IAsyncPolicy<DurableCircuitBreaker> GetCachePolicy(string circuitBreakerId)
         {
             var key = $"{DurableCircuitBreakerKeyPrefix}{circuitBreakerId}";
 
-            if (policyRegistry.TryGet(key, out IAsyncPolicy<BreakerState> cachePolicy))
+            if (policyRegistry.TryGet(key, out IAsyncPolicy<DurableCircuitBreaker> cachePolicy))
             {
                 return cachePolicy;
             }
@@ -121,15 +124,15 @@ namespace Polly.Contrib.AzureFunctions.CircuitBreaker
             TimeSpan checkCircuitInterval = ConfigurationHelper.GetCircuitConfigurationTimeSpan(circuitBreakerId, "PerformancePriorityCheckCircuitInterval", DefaultPerformancePriorityCheckCircuitInterval);
             if (checkCircuitInterval > TimeSpan.Zero)
             {
-                cachePolicy = Policy.CacheAsync<BreakerState>(
+                cachePolicy = Policy.CacheAsync<DurableCircuitBreaker>(
                     serviceProvider
                         .GetRequiredService<IAsyncCacheProvider>()
-                        .AsyncFor<BreakerState>(),
+                        .AsyncFor<DurableCircuitBreaker>(),
                     checkCircuitInterval);
             }
             else
             {
-                cachePolicy = Policy.NoOpAsync<BreakerState>();
+                cachePolicy = Policy.NoOpAsync<DurableCircuitBreaker>();
             }
 
             policyRegistry[key] = cachePolicy;
